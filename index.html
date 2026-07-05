@@ -1,0 +1,800 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Astrarium</title>
+<style>
+:root{
+  --paper:#f6f2ea; --paper2:#efe9dd; --paper3:#e6dece; --line:#d8cfba;
+  --ink:#211d18; --ink2:#5f574a; --ink3:#9a8f7c;
+  --accent:#b5714a; --axis:#c04f86; --mc:#3f6ea5;
+  --harm:#3f6ea5; --hard:#c0685c; --conj:#7d8a6a;
+  --wheelbg:#eef4f5;
+  --fire:#e39a86; --earth:#a9c99a; --air:#e6d38a; --water:#8fc7d4;
+  --radius:16px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#17150f; --paper2:#1f1c15; --paper3:#272319; --line:#38321f;
+    --ink:#efe7d6; --ink2:#b3a892; --ink3:#7c7360;
+    --accent:#d68c60; --wheelbg:#12171a;
+    --axis:#d67aa6; --mc:#6f9fd0; --harm:#6f9fd0;
+    --fire:#a86a58; --earth:#6f8a62; --air:#a89454; --water:#5c8a94;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--paper); color:var(--ink);
+  font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  -webkit-text-size-adjust:100%; padding:0 0 60px;
+}
+h1,h2,h3,.serif{font-family:"Newsreader",Georgia,"Times New Roman",serif;font-weight:500}
+header{padding:20px 20px 8px;max-width:760px;margin:0 auto;display:flex;align-items:flex-start;gap:12px}
+header .ht{flex:1}
+header h1{font-size:26px;margin:0;letter-spacing:.2px}
+header p{margin:4px 0 0;color:var(--ink2);font-size:13px}
+.wrap{max-width:760px;margin:0 auto;padding:0 20px}
+.card{background:var(--paper2);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin:14px 0}
+.card h2{font-size:16px;margin:0 0 12px}
+label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);margin:0 0 4px}
+input,select{
+  width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:10px;
+  background:var(--paper);color:var(--ink);font:inherit;font-variant-numeric:tabular-nums;
+}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--paper3);color:var(--ink);padding:9px 14px}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.lang{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;flex:none}
+.lang button{border:none;border-radius:0;padding:6px 11px;background:var(--paper2);font-size:13px}
+.lang button.on{background:var(--accent);color:#fff}
+.mono,.deg{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+svg{display:block;width:100%;height:auto;touch-action:manipulation}
+.planet-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.planet-row:last-child{border-bottom:none}
+.planet-row .g{font-size:19px;width:26px;text-align:center}
+.planet-row .nm{width:110px;color:var(--ink2)}
+.planet-row .pos{font-weight:500}
+.planet-row .hs{margin-left:auto;color:var(--ink3);font-size:12px}
+.muted{color:var(--ink2)}
+.tiny{font-size:12px;color:var(--ink3)}
+.detail{background:var(--paper3);border-radius:12px;padding:12px;margin-top:10px;min-height:20px}
+.detail.empty{color:var(--ink3);font-style:italic}
+.transit{border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0;background:var(--paper)}
+.transit .head{display:flex;align-items:center;gap:8px;font-size:15px}
+.transit .bar{height:6px;border-radius:3px;background:var(--paper3);margin:8px 0;overflow:hidden}
+.transit .bar i{display:block;height:100%;background:var(--accent)}
+.rate{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center}
+.chip{padding:5px 9px;border:1px solid var(--line);border-radius:999px;font-size:12px;cursor:pointer;background:var(--paper2);user-select:none}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.stars{letter-spacing:2px;font-size:18px;cursor:pointer;user-select:none;color:var(--ink3)}
+.stars b{color:var(--accent);font-weight:400}
+.learn-line{padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.learn-line:last-child{border:none}
+.learn-line b{color:var(--accent);font-weight:500}
+.pill{display:inline-block;font-size:11px;padding:2px 7px;border-radius:999px;background:var(--paper3);color:var(--ink2);margin-left:6px}
+.foot{max-width:760px;margin:20px auto;padding:0 20px;color:var(--ink3);font-size:12px}
+a{color:var(--accent)}
+.glyph{font-family:"Segoe UI Symbol","Apple Symbols","Noto Sans Symbols2",serif}
+.citywrap{position:relative}
+.citylist{position:absolute;left:0;right:0;top:100%;margin-top:4px;background:var(--paper);border:1px solid var(--line);border-radius:10px;max-height:220px;overflow:auto;z-index:20;box-shadow:0 8px 20px rgba(0,0,0,.14);display:none}
+.citylist div{padding:8px 10px;cursor:pointer;font-size:14px;display:flex;justify-content:space-between;gap:8px}
+.citylist div:hover{background:var(--paper3)}
+.citylist .cc{color:var(--ink3);font-size:12px}
+</style>
+
+<header>
+  <div class="ht">
+    <h1>Astrarium</h1>
+    <p data-i="tagline"></p>
+  </div>
+  <div class="lang">
+    <button data-lang="ru">RU</button><button data-lang="en">EN</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="card">
+    <h2 data-i="birth"></h2>
+    <div class="grid">
+      <div><label data-i="date"></label><input id="date" type="date" value="1985-10-03"></div>
+      <div><label data-i="time"></label><input id="time" type="time" value="13:37"></div>
+    </div>
+    <div class="citywrap" style="margin-top:10px">
+      <label data-i="city"></label>
+      <input id="city" type="text" autocomplete="off">
+      <div id="citylist" class="citylist"></div>
+    </div>
+    <div class="grid3" style="margin-top:10px">
+      <div><label data-i="lat"></label><input id="lat" type="number" step="0.0001" value="59.9343"></div>
+      <div><label data-i="lng"></label><input id="lng" type="number" step="0.0001" value="30.3351"></div>
+      <div><label data-i="tz"></label><input id="tz" type="text" value="+03:00" placeholder="+03:00"></div>
+    </div>
+    <div style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <button class="primary" id="calc" data-i="cast"></button>
+      <span class="tiny" data-i="hint"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 data-i="wheel"></h2>
+    <div id="wheel"></div>
+    <div class="detail empty" id="detail"></div>
+  </div>
+
+  <div class="card">
+    <h2 data-i="positions"></h2>
+    <div id="positions"></div>
+    <div class="tiny" style="margin-top:8px" data-i="posnote"></div>
+  </div>
+
+  <div class="card">
+    <h2 data-i="reading"></h2>
+    <div id="reading"></div>
+  </div>
+
+  <div class="card">
+    <h2 data-i="transits"></h2>
+    <p class="tiny" style="margin-top:0" data-i="transintro"></p>
+    <div id="transitlist"></div>
+  </div>
+
+  <div class="card">
+    <h2 data-i="learned"></h2>
+    <div id="learnedbox"></div>
+    <div style="margin-top:10px"><button id="reset" data-i="forget"></button></div>
+  </div>
+
+</div>
+
+<div class="foot" data-i="foot"></div>
+
+<script>
+"use strict";
+/* ============================================================
+   ASTRARIUM - offline core prototype
+   ============================================================ */
+
+/* ---------- i18n ---------- */
+let LANG = localStorage.getItem('astrarium_lang') || 'ru';
+const STR = {
+  tagline:{ru:'Офлайновое ядро расчёта и интерпретации. Ни сети, ни API. ', en:'Offline calculation + interpretation core. No network, no API. '},
+  birth:{ru:'Данные рождения',en:'Birth data'},
+  date:{ru:'Дата',en:'Date'}, time:{ru:'Время (местное)',en:'Time (local)'},
+  lat:{ru:'Широта',en:'Latitude'}, lng:{ru:'Долгота',en:'Longitude'}, tz:{ru:'Смещение UTC (ч)',en:'UTC offset (h)'},
+  cast:{ru:'Построить карту',en:'Cast chart'},
+  city:{ru:'Город рождения',en:'Birth city'},
+  cityph:{ru:'Начните вводить название...',en:'Start typing a name...'},
+  hint:{ru:'Смещение UTC подставляется автоматически из часового пояса выбранного города для точной даты, старые изменения времени учтены. Правка вручную нужна лишь в редких случаях: день перехода на летнее время или местное время до стандартизации поясов.',en:'The UTC offset fills in automatically from the chosen city’s time zone for the exact date, historical shifts included. Manual editing is only for rare edge cases: the day of a DST changeover, or local time before zones were standardized.'},
+  wheel:{ru:'Колесо карты',en:'Chart wheel'},
+  tapdetail:{ru:'Коснитесь планеты для детали.',en:'Tap a planet for detail.'},
+  positions:{ru:'Позиции',en:'Positions'},
+  posnote:{ru:'Дома целознаковые. Асцендент и MC из звёздного времени. Движок: компактный аналитический ряд (Шлютер), целиком офлайн, это шов, куда встаёт Swiss Ephemeris (WASM) для точности до секунды.',en:'Whole-sign houses. Ascendant and MC from sidereal time. Engine: compact analytic series (Schlyter), fully offline, the seam where Swiss Ephemeris (WASM) drops in for arc-second grade.'},
+  reading:{ru:'Разбор карты',en:'Natal reading'},
+  transits:{ru:'Транзиты на сегодня',en:"Today's transits"},
+  transintro:{ru:'Транзитные планеты сегодня к вашей натальной карте. Оцените, как каждый реально ощущается, движок подстраивает ранжирование и тон полностью без API.',en:'Transiting planets today vs your natal chart. Rate how each one actually lands, the engine adapts ranking and tone with zero API.'},
+  learned:{ru:'Что Astrarium узнал о вас',en:'What Astrarium has learned about you'},
+  ondevice:{ru:'на устройстве',en:'on-device'},
+  forget:{ru:'Забыть всё',en:'Forget everything'},
+  landq:{ru:'Зашло?',en:'Did it land?'}, felt:{ru:'Ощущалось:',en:'Felt:'},
+  orb:{ru:'орбис',en:'orb'}, weight:{ru:'личный вес',en:'personal weight'}, house:{ru:'дом',en:'house'},
+  lasttime:{ru:'В прошлый раз',en:'Last time'}, noaspects:{ru:'Крупных аспектов в орбисе нет.',en:'No major aspects within orb.'},
+  notransits:{ru:'Сейчас транзитов в орбисе нет.',en:'No transits within orb right now.'},
+  learnempty:{ru:'Оцените несколько транзитов выше. Движок строит приватную модель того, как циклы реально проживаются именно вами, ранжирование и тон подстраиваются целиком на этом устройстве.',en:'Rate a few transits above. The engine builds a private model of how cycles actually land for you, ranking and tone adapt entirely on this device.'},
+  foot:{ru:'Прототип. Позиции точны до угловых минут (аналитический ряд), в продакшене встаёт swisseph-WASM. Ничто здесь не выходит в сеть.',en:'Prototype. Positions accurate to a few arc-minutes (analytic series), production swaps in swisseph-WASM. Nothing here contacts the network.'}
+};
+function t(k){const s=STR[k];return s?(s[LANG]!==undefined?s[LANG]:s.en):k;}
+
+const D2R=Math.PI/180, R2D=180/Math.PI;
+const rev=x=>{x=x%360;return x<0?x+360:x;};
+const sind=x=>Math.sin(x*D2R), cosd=x=>Math.cos(x*D2R), tand=x=>Math.tan(x*D2R);
+const atan2d=(y,x)=>rev(Math.atan2(y,x)*R2D);
+const asind=x=>Math.asin(x)*R2D;
+
+/* ---------- ephemeris (Schlyter) ---------- */
+function eccAnom(M,e){
+  M=rev(M); const ed=e*R2D; let E=M+ed*sind(M)*(1+e*cosd(M));
+  for(let k=0;k<8;k++){const dE=(E-ed*sind(E)-M)/(1-e*cosd(E));E-=dE;if(Math.abs(dE)<1e-8)break;}
+  return E;
+}
+function dayNumber(y,m,day,utHours){
+  const d=367*y-Math.floor(7*(y+Math.floor((m+9)/12))/4)+Math.floor(275*m/9)+day-730530;
+  return d+utHours/24;
+}
+const ELEM={
+  Mercury:d=>({N:48.3313+3.24587e-5*d,i:7.0047+5.00e-8*d,w:29.1241+1.01444e-5*d,a:0.387098,e:0.205635+5.59e-10*d,M:168.6562+4.0923344368*d}),
+  Venus:d=>({N:76.6799+2.46590e-5*d,i:3.3946+2.75e-8*d,w:54.8910+1.38374e-5*d,a:0.723330,e:0.006773-1.302e-9*d,M:48.0052+1.6021302244*d}),
+  Mars:d=>({N:49.5574+2.11081e-5*d,i:1.8497-1.78e-8*d,w:286.5016+2.92961e-5*d,a:1.523688,e:0.093405+2.516e-9*d,M:18.6021+0.5240207766*d}),
+  Jupiter:d=>({N:100.4542+2.76854e-5*d,i:1.3030-1.557e-7*d,w:273.8777+1.64505e-5*d,a:5.20256,e:0.048498+4.469e-9*d,M:19.8950+0.0830853001*d}),
+  Saturn:d=>({N:113.6634+2.38980e-5*d,i:2.4886-1.081e-7*d,w:339.3939+2.97661e-5*d,a:9.55475,e:0.055546-9.499e-9*d,M:316.9670+0.0334442282*d}),
+  Uranus:d=>({N:74.0005+1.3978e-5*d,i:0.7733+1.9e-8*d,w:96.6612+3.0565e-5*d,a:19.18171-1.55e-8*d,e:0.047318+7.45e-9*d,M:142.5905+0.011725806*d}),
+  Neptune:d=>({N:131.7806+3.0173e-5*d,i:1.7700-2.55e-7*d,w:272.8461-6.027e-6*d,a:30.05826+3.313e-8*d,e:0.008606+2.15e-9*d,M:260.2471+0.005995147*d})
+};
+function sunPos(d){
+  const w=282.9404+4.70935e-5*d,e=0.016709-1.151e-9*d,M=356.0470+0.9856002585*d;
+  const E=eccAnom(M,e),xv=cosd(E)-e,yv=Math.sqrt(1-e*e)*sind(E);
+  const v=atan2d(yv,xv),r=Math.sqrt(xv*xv+yv*yv),lon=rev(v+w);
+  return {lon,r,xs:r*cosd(lon),ys:r*sind(lon),Ls:rev(w+M),Msun:rev(M)};
+}
+function moonPos(d,sun){
+  const N=125.1228-0.0529538083*d,i=5.1454,w=318.0634+0.1643573223*d,a=60.2666,e=0.054900,M=115.3654+13.0649929509*d;
+  const E=eccAnom(M,e),xv=a*(cosd(E)-e),yv=a*Math.sqrt(1-e*e)*sind(E);
+  const v=atan2d(yv,xv),r=Math.sqrt(xv*xv+yv*yv);
+  let xh=r*(cosd(N)*cosd(v+w)-sind(N)*sind(v+w)*cosd(i));
+  let yh=r*(sind(N)*cosd(v+w)+cosd(N)*sind(v+w)*cosd(i));
+  let zh=r*(sind(v+w)*sind(i));
+  let lon=atan2d(yh,xh),lat=asind(zh/r);
+  const Ls=sun.Ls,Ms=sun.Msun,Lm=rev(N+w+M),Mm=rev(M),Dp=rev(Lm-Ls),F=rev(Lm-N);
+  lon+=-1.274*sind(Mm-2*Dp)+0.658*sind(2*Dp)-0.186*sind(Ms)-0.059*sind(2*Mm-2*Dp)
+    -0.057*sind(Mm-2*Dp+Ms)+0.053*sind(Mm+2*Dp)+0.046*sind(2*Dp-Ms)+0.041*sind(Mm-Ms)
+    -0.035*sind(Dp)-0.031*sind(Mm+Ms)-0.015*sind(2*F-2*Dp)+0.011*sind(Mm-4*Dp);
+  return {lon:rev(lon),lat};
+}
+function planetPos(name,d,sun){
+  const el=ELEM[name](d),E=eccAnom(el.M,el.e);
+  const xv=el.a*(cosd(E)-el.e),yv=el.a*Math.sqrt(1-el.e*el.e)*sind(E);
+  const v=atan2d(yv,xv),r=Math.sqrt(xv*xv+yv*yv);
+  const xh=r*(cosd(el.N)*cosd(v+el.w)-sind(el.N)*sind(v+el.w)*cosd(el.i));
+  const yh=r*(sind(el.N)*cosd(v+el.w)+cosd(el.N)*sind(v+el.w)*cosd(el.i));
+  let lon0=atan2d(yh,xh),lon=lon0;
+  const Mj=ELEM.Jupiter(d).M,Ms=ELEM.Saturn(d).M,Mu=ELEM.Uranus(d).M;
+  if(name==='Jupiter'){lon+=-0.332*sind(2*Mj-5*Ms-67.6)-0.056*sind(2*Mj-2*Ms+21)+0.042*sind(3*Mj-5*Ms+21)-0.036*sind(Mj-2*Ms)+0.022*cosd(Mj-Ms)+0.023*sind(2*Mj-3*Ms+52)-0.016*sind(Mj-5*Ms-69);}
+  else if(name==='Saturn'){lon+=0.812*sind(2*Mj-5*Ms-67.6)-0.229*cosd(2*Mj-4*Ms-2)+0.119*sind(Mj-2*Ms-3)+0.046*sind(2*Mj-6*Ms-69)+0.014*sind(Mj-3*Ms+32);}
+  else if(name==='Uranus'){lon+=0.040*sind(Ms-2*Mu+6)+0.035*sind(Ms-3*Mu+33)-0.015*sind(Mj-Mu+20);}
+  const xg=xh+sun.xs,yg=yh+sun.ys,geo=atan2d(yg,xg);
+  return {lon:rev(geo+(lon-lon0))};
+}
+function plutoPos(d,sun){
+  const P=rev(238.95+0.003968789*d)*D2R,S=rev(50.03+0.033459652*d)*D2R;
+  let lon=238.9508+0.00400703*d-19.799*Math.sin(P)+19.848*Math.cos(P)+0.897*Math.sin(2*P)-4.956*Math.cos(2*P)+0.610*Math.sin(3*P)+1.211*Math.cos(3*P)-0.341*Math.sin(4*P)-0.190*Math.cos(4*P)+0.128*Math.sin(5*P)-0.034*Math.cos(5*P)-0.038*Math.sin(6*P)+0.031*Math.cos(6*P)+0.020*Math.sin(S-P)-0.010*Math.cos(S-P);
+  let lat=-3.9082-5.453*Math.sin(P)-14.975*Math.cos(P)+3.527*Math.sin(2*P)+1.673*Math.cos(2*P)-1.051*Math.sin(3*P)+0.328*Math.cos(3*P)+0.179*Math.sin(4*P)-0.292*Math.cos(4*P)+0.019*Math.sin(5*P)+0.100*Math.cos(5*P)-0.031*Math.sin(6*P)-0.026*Math.cos(6*P)+0.011*Math.cos(S-P);
+  let r=40.72+6.68*Math.sin(P)+6.90*Math.cos(P)-1.18*Math.sin(2*P)-0.03*Math.cos(2*P)+0.15*Math.sin(3*P)-0.14*Math.cos(3*P);
+  const xh=r*cosd(lon)*cosd(lat),yh=r*sind(lon)*cosd(lat);
+  return {lon:atan2d(yh+sun.ys,xh+sun.xs)};
+}
+
+const BODIES=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto'];
+const GLYPH={Sun:'☉',Moon:'☽',Mercury:'☿',Venus:'♀',Mars:'♂',Jupiter:'♃',Saturn:'♄',Uranus:'♅',Neptune:'♆',Pluto:'♇',ASC:'Asc',MC:'MC'};
+const PLANET_NAME={
+  ru:{Sun:'Солнце',Moon:'Луна',Mercury:'Меркурий',Venus:'Венера',Mars:'Марс',Jupiter:'Юпитер',Saturn:'Сатурн',Uranus:'Уран',Neptune:'Нептун',Pluto:'Плутон',ASC:'Асцендент',MC:'MC'},
+  en:{Sun:'Sun',Moon:'Moon',Mercury:'Mercury',Venus:'Venus',Mars:'Mars',Jupiter:'Jupiter',Saturn:'Saturn',Uranus:'Uranus',Neptune:'Neptune',Pluto:'Pluto',ASC:'Ascendant',MC:'MC'}
+};
+const PN=n=>PLANET_NAME[LANG][n]||n;
+const SIGN_NAME={
+  ru:['Овен','Телец','Близнецы','Рак','Лев','Дева','Весы','Скорпион','Стрелец','Козерог','Водолей','Рыбы'],
+  en:['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces']
+};
+const SIGN_ABBR={
+  ru:['Овн','Тел','Бли','Рак','Лев','Дев','Вес','Скп','Стр','Коз','Вдл','Рыб'],
+  en:['Ari','Tau','Gem','Can','Leo','Vir','Lib','Sco','Sgr','Cap','Aqr','Psc']
+};
+// Zodiac glyphs are drawn as vector line-icons (not Unicode characters) so they
+// never depend on a system font's emoji policy - some platforms substitute a
+// colorful "sticker" tile for U+2648-2653 regardless of variation selectors.
+const ZODIAC_SYMBOL=[
+  '<path d="M12 20 C12 14 8 12 6 12 C4 12 4 15 6 16 M12 20 C12 14 16 12 18 12 C20 12 20 15 18 16"/>',
+  '<circle cx="12" cy="15" r="4.3"/><path d="M7 11 C7 6 17 6 17 11"/>',
+  '<path d="M7 5 H17 M9 5 V19 M15 5 V19 M7 19 H17"/>',
+  '<circle cx="8" cy="9" r="2"/><path d="M8 11 Q8 17 15 17"/><circle cx="16" cy="15" r="2"/><path d="M16 13 Q16 7 9 7"/>',
+  '<circle cx="9" cy="9" r="3.2"/><path d="M11.2 11.5 C13 15 17 13 17 17 C17 19.5 14.5 20 13 18.5"/>',
+  '<path d="M6 6 V17 M6 8 C6 4 9.5 4 9.5 8 V17 M9.5 8 C9.5 4 13 4 13 8 V16 C13 19 17 19 17 15.5 C17 13 14.5 13 14.5 15.5 C14.5 17 16 17 16.5 16"/>',
+  '<path d="M6 8 H18 M6 14 C6 10.5 18 10.5 18 14 M5 18 H19"/>',
+  '<path d="M6 6 V16 M6 8 C6 4 9.5 4 9.5 8 V16 M9.5 8 C9.5 4 13 4 13 8 V16 M13 16 H17 M15 14 L17.3 16.3 L15 18.6"/>',
+  '<path d="M6 19 L18 7 M12 7 H18 V13 M9 13 L13 9"/>',
+  '<path d="M6 6 L9.5 18 L13 6 M13 10 C13 16 19 14.5 19 18.5 C19 21 16.5 21.3 15 19.6"/>',
+  '<path d="M5 9.5 L8 7.5 L11 11.5 L14 7.5 L17 9.5 M5 15 L8 13 L11 17 L14 13 L17 15"/>',
+  '<path d="M9 5 C5 9 5 15 9 19 M15 5 C19 9 19 15 15 19 M6 12 H18"/>'
+];
+const ZODIAC_DEFS='<defs>'+ZODIAC_SYMBOL.map((d,i)=>
+  `<symbol id="z${i}" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${d}</g></symbol>`
+).join('')+'</defs>';
+const ELEM_VAR=['var(--fire)','var(--earth)','var(--air)','var(--water)']; // Aries fire, Taurus earth, Gemini air, Cancer water, ...
+const ROMAN=['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
+const SIGN_TRAIT={
+  ru:['смелый, прямой','устойчивый, чувственный','любопытный, быстрый','заботливый, переменчивый','тёплый, гордый','точный, полезный','справедливый, контактный','глубокий, ищущий','неугомонный, ищущий','упорный, терпеливый','изобретательный, независимый','чуткий, мечтательный'],
+  en:['bold, direct','steady, sensual','curious, quick','protective, tidal','warm, proud','precise, useful','fair, relational','intense, probing','restless, questing','ambitious, patient','inventive, independent','porous, dreaming']
+};
+const PLANET_FN={
+  ru:{Sun:'ядро личности',Moon:'эмоциональные потребности',Mercury:'мышление и речь',Venus:'любовь и ценности',Mars:'воля и напор',Jupiter:'рост и вера',Saturn:'структура и границы',Uranus:'слом привычного',Neptune:'воображение',Pluto:'глубина и власть'},
+  en:{Sun:'core identity',Moon:'emotional needs',Mercury:'thinking and speech',Venus:'love and values',Mars:'drive and assertion',Jupiter:'growth and belief',Saturn:'structure and limits',Uranus:'disruption',Neptune:'imagination',Pluto:'depth and power'}
+};
+const ASPECT_NAME={
+  ru:{conjunction:'соединение',sextile:'секстиль',square:'квадрат',trine:'трин',opposition:'оппозиция'},
+  en:{conjunction:'conjunction',sextile:'sextile',square:'square',trine:'trine',opposition:'opposition'}
+};
+const AREA_KEYS=['career','love','energy','mind','home'];
+const AREA_NAME={ru:{career:'карьера',love:'любовь',energy:'энергия',mind:'ум',home:'дом'},en:{career:'career',love:'love',energy:'energy',mind:'mind',home:'home'}};
+
+const RECEIVER_RANK={ASC:1.5,MC:1.5,Sun:1.3,Moon:1.3,Mercury:1.0,Venus:1.0,Mars:1.0,Jupiter:0.8,Saturn:0.8,Uranus:0.5,Neptune:0.5,Pluto:0.5};
+const SPEED_ORB={Sun:2,Moon:6,Mercury:2,Venus:2,Mars:2,Jupiter:1.5,Saturn:1.5,Uranus:1,Neptune:1,Pluto:1};
+const ASPECTS=[
+  {name:'conjunction',angle:0,orb:8,kind:'conj',color:'var(--conj)'},
+  {name:'sextile',angle:60,orb:4,kind:'harm',color:'var(--harm)'},
+  {name:'square',angle:90,orb:6,kind:'hard',color:'var(--hard)'},
+  {name:'trine',angle:120,orb:6,kind:'harm',color:'var(--harm)'},
+  {name:'opposition',angle:180,orb:7,kind:'hard',color:'var(--hard)'}
+];
+const ASPECT_GLYPH={conjunction:'☌',sextile:'⚹',square:'□',trine:'△',opposition:'☍'};
+
+/* ---------- offline city atlas: name search -> lat/lng + IANA zone ----------
+   Prototype list (~110 cities). Production swaps in a packed GeoNames
+   cities15000 index (see project notes) - same lookup contract: name -> {lat,lon,tz}. */
+const CITIES=[
+{r:'Москва',e:'Moscow',c:'RU',lat:55.7558,lon:37.6176,z:'Europe/Moscow'},
+{r:'Санкт-Петербург',e:'Saint Petersburg',c:'RU',lat:59.9343,lon:30.3351,z:'Europe/Moscow'},
+{r:'Новосибирск',e:'Novosibirsk',c:'RU',lat:55.0084,lon:82.9357,z:'Asia/Novosibirsk'},
+{r:'Екатеринбург',e:'Yekaterinburg',c:'RU',lat:56.8389,lon:60.6057,z:'Asia/Yekaterinburg'},
+{r:'Казань',e:'Kazan',c:'RU',lat:55.8304,lon:49.0661,z:'Europe/Moscow'},
+{r:'Нижний Новгород',e:'Nizhny Novgorod',c:'RU',lat:56.2965,lon:43.9361,z:'Europe/Moscow'},
+{r:'Челябинск',e:'Chelyabinsk',c:'RU',lat:55.1644,lon:61.4368,z:'Asia/Yekaterinburg'},
+{r:'Самара',e:'Samara',c:'RU',lat:53.2001,lon:50.15,z:'Europe/Samara'},
+{r:'Омск',e:'Omsk',c:'RU',lat:54.9885,lon:73.3242,z:'Asia/Omsk'},
+{r:'Ростов-на-Дону',e:'Rostov-on-Don',c:'RU',lat:47.2357,lon:39.7015,z:'Europe/Moscow'},
+{r:'Уфа',e:'Ufa',c:'RU',lat:54.7388,lon:55.9721,z:'Asia/Yekaterinburg'},
+{r:'Красноярск',e:'Krasnoyarsk',c:'RU',lat:56.0184,lon:92.8672,z:'Asia/Krasnoyarsk'},
+{r:'Пермь',e:'Perm',c:'RU',lat:58.0105,lon:56.2502,z:'Asia/Yekaterinburg'},
+{r:'Воронеж',e:'Voronezh',c:'RU',lat:51.672,lon:39.1843,z:'Europe/Moscow'},
+{r:'Волгоград',e:'Volgograd',c:'RU',lat:48.708,lon:44.5133,z:'Europe/Volgograd'},
+{r:'Краснодар',e:'Krasnodar',c:'RU',lat:45.0355,lon:38.9753,z:'Europe/Moscow'},
+{r:'Саратов',e:'Saratov',c:'RU',lat:51.5924,lon:45.9608,z:'Europe/Saratov'},
+{r:'Тюмень',e:'Tyumen',c:'RU',lat:57.1522,lon:65.5272,z:'Asia/Yekaterinburg'},
+{r:'Владивосток',e:'Vladivostok',c:'RU',lat:43.1155,lon:131.8855,z:'Asia/Vladivostok'},
+{r:'Иркутск',e:'Irkutsk',c:'RU',lat:52.287,lon:104.305,z:'Asia/Irkutsk'},
+{r:'Хабаровск',e:'Khabarovsk',c:'RU',lat:48.4827,lon:135.0838,z:'Asia/Vladivostok'},
+{r:'Калининград',e:'Kaliningrad',c:'RU',lat:54.7104,lon:20.4522,z:'Europe/Kaliningrad'},
+{r:'Якутск',e:'Yakutsk',c:'RU',lat:62.0281,lon:129.7325,z:'Asia/Yakutsk'},
+{r:'Магадан',e:'Magadan',c:'RU',lat:59.5638,lon:150.8087,z:'Asia/Magadan'},
+{r:'Петропавловск-Камчатский',e:'Petropavlovsk-Kamchatsky',c:'RU',lat:53.0195,lon:158.6493,z:'Asia/Kamchatka'},
+{r:'Киев',e:'Kyiv',c:'UA',lat:50.4501,lon:30.5234,z:'Europe/Kyiv'},
+{r:'Минск',e:'Minsk',c:'BY',lat:53.9006,lon:27.559,z:'Europe/Minsk'},
+{r:'Алматы',e:'Almaty',c:'KZ',lat:43.222,lon:76.8512,z:'Asia/Almaty'},
+{r:'Астана',e:'Astana',c:'KZ',lat:51.1605,lon:71.4704,z:'Asia/Almaty'},
+{r:'Ташкент',e:'Tashkent',c:'UZ',lat:41.2995,lon:69.2401,z:'Asia/Tashkent'},
+{r:'Бишкек',e:'Bishkek',c:'KG',lat:42.8746,lon:74.5698,z:'Asia/Bishkek'},
+{r:'Душанбе',e:'Dushanbe',c:'TJ',lat:38.5598,lon:68.787,z:'Asia/Dushanbe'},
+{r:'Ашхабад',e:'Ashgabat',c:'TM',lat:37.9601,lon:58.3261,z:'Asia/Ashgabat'},
+{r:'Ереван',e:'Yerevan',c:'AM',lat:40.1792,lon:44.4991,z:'Asia/Yerevan'},
+{r:'Тбилиси',e:'Tbilisi',c:'GE',lat:41.7151,lon:44.8271,z:'Asia/Tbilisi'},
+{r:'Баку',e:'Baku',c:'AZ',lat:40.4093,lon:49.8671,z:'Asia/Baku'},
+{r:'Кишинёв',e:'Chisinau',c:'MD',lat:47.0105,lon:28.8638,z:'Europe/Chisinau'},
+{r:'Вильнюс',e:'Vilnius',c:'LT',lat:54.6872,lon:25.2797,z:'Europe/Vilnius'},
+{r:'Рига',e:'Riga',c:'LV',lat:56.9496,lon:24.1052,z:'Europe/Riga'},
+{r:'Таллин',e:'Tallinn',c:'EE',lat:59.437,lon:24.7536,z:'Europe/Tallinn'},
+{r:'Лондон',e:'London',c:'GB',lat:51.5074,lon:-0.1278,z:'Europe/London'},
+{r:'Париж',e:'Paris',c:'FR',lat:48.8566,lon:2.3522,z:'Europe/Paris'},
+{r:'Берлин',e:'Berlin',c:'DE',lat:52.52,lon:13.405,z:'Europe/Berlin'},
+{r:'Мадрид',e:'Madrid',c:'ES',lat:40.4168,lon:-3.7038,z:'Europe/Madrid'},
+{r:'Рим',e:'Rome',c:'IT',lat:41.9028,lon:12.4964,z:'Europe/Rome'},
+{r:'Амстердам',e:'Amsterdam',c:'NL',lat:52.3676,lon:4.9041,z:'Europe/Amsterdam'},
+{r:'Вена',e:'Vienna',c:'AT',lat:48.2082,lon:16.3738,z:'Europe/Vienna'},
+{r:'Варшава',e:'Warsaw',c:'PL',lat:52.2297,lon:21.0122,z:'Europe/Warsaw'},
+{r:'Прага',e:'Prague',c:'CZ',lat:50.0755,lon:14.4378,z:'Europe/Prague'},
+{r:'Будапешт',e:'Budapest',c:'HU',lat:47.4979,lon:19.0402,z:'Europe/Budapest'},
+{r:'Бухарест',e:'Bucharest',c:'RO',lat:44.4268,lon:26.1025,z:'Europe/Bucharest'},
+{r:'София',e:'Sofia',c:'BG',lat:42.6977,lon:23.3219,z:'Europe/Sofia'},
+{r:'Афины',e:'Athens',c:'GR',lat:37.9838,lon:23.7275,z:'Europe/Athens'},
+{r:'Лиссабон',e:'Lisbon',c:'PT',lat:38.7223,lon:-9.1393,z:'Europe/Lisbon'},
+{r:'Дублин',e:'Dublin',c:'IE',lat:53.3498,lon:-6.2603,z:'Europe/Dublin'},
+{r:'Брюссель',e:'Brussels',c:'BE',lat:50.8503,lon:4.3517,z:'Europe/Brussels'},
+{r:'Цюрих',e:'Zurich',c:'CH',lat:47.3769,lon:8.5417,z:'Europe/Zurich'},
+{r:'Стокгольм',e:'Stockholm',c:'SE',lat:59.3293,lon:18.0686,z:'Europe/Stockholm'},
+{r:'Осло',e:'Oslo',c:'NO',lat:59.9139,lon:10.7522,z:'Europe/Oslo'},
+{r:'Копенгаген',e:'Copenhagen',c:'DK',lat:55.6761,lon:12.5683,z:'Europe/Copenhagen'},
+{r:'Хельсинки',e:'Helsinki',c:'FI',lat:60.1699,lon:24.9384,z:'Europe/Helsinki'},
+{r:'Белград',e:'Belgrade',c:'RS',lat:44.7866,lon:20.4489,z:'Europe/Belgrade'},
+{r:'Загреб',e:'Zagreb',c:'HR',lat:45.815,lon:15.9819,z:'Europe/Zagreb'},
+{r:'Стамбул',e:'Istanbul',c:'TR',lat:41.0082,lon:28.9784,z:'Europe/Istanbul'},
+{r:'Анкара',e:'Ankara',c:'TR',lat:39.9334,lon:32.8597,z:'Europe/Istanbul'},
+{r:'Тель-Авив',e:'Tel Aviv',c:'IL',lat:32.0853,lon:34.7818,z:'Asia/Jerusalem'},
+{r:'Иерусалим',e:'Jerusalem',c:'IL',lat:31.7683,lon:35.2137,z:'Asia/Jerusalem'},
+{r:'Дубай',e:'Dubai',c:'AE',lat:25.2048,lon:55.2708,z:'Asia/Dubai'},
+{r:'Абу-Даби',e:'Abu Dhabi',c:'AE',lat:24.4539,lon:54.3773,z:'Asia/Dubai'},
+{r:'Эр-Рияд',e:'Riyadh',c:'SA',lat:24.7136,lon:46.6753,z:'Asia/Riyadh'},
+{r:'Доха',e:'Doha',c:'QA',lat:25.2854,lon:51.531,z:'Asia/Qatar'},
+{r:'Амман',e:'Amman',c:'JO',lat:31.9454,lon:35.9284,z:'Asia/Amman'},
+{r:'Бейрут',e:'Beirut',c:'LB',lat:33.8938,lon:35.5018,z:'Asia/Beirut'},
+{r:'Тегеран',e:'Tehran',c:'IR',lat:35.6892,lon:51.389,z:'Asia/Tehran'},
+{r:'Багдад',e:'Baghdad',c:'IQ',lat:33.3152,lon:44.3661,z:'Asia/Baghdad'},
+{r:'Каир',e:'Cairo',c:'EG',lat:30.0444,lon:31.2357,z:'Africa/Cairo'},
+{r:'Касабланка',e:'Casablanca',c:'MA',lat:33.5731,lon:-7.5898,z:'Africa/Casablanca'},
+{r:'Лагос',e:'Lagos',c:'NG',lat:6.5244,lon:3.3792,z:'Africa/Lagos'},
+{r:'Найроби',e:'Nairobi',c:'KE',lat:-1.2921,lon:36.8219,z:'Africa/Nairobi'},
+{r:'Йоханнесбург',e:'Johannesburg',c:'ZA',lat:-26.2041,lon:28.0473,z:'Africa/Johannesburg'},
+{r:'Кейптаун',e:'Cape Town',c:'ZA',lat:-33.9249,lon:18.4241,z:'Africa/Johannesburg'},
+{r:'Аддис-Абеба',e:'Addis Ababa',c:'ET',lat:9.025,lon:38.7469,z:'Africa/Addis_Ababa'},
+{r:'Аккра',e:'Accra',c:'GH',lat:5.6037,lon:-0.187,z:'Africa/Accra'},
+{r:'Тунис',e:'Tunis',c:'TN',lat:36.8065,lon:10.1815,z:'Africa/Tunis'},
+{r:'Алжир',e:'Algiers',c:'DZ',lat:36.7538,lon:3.0588,z:'Africa/Algiers'},
+{r:'Мумбаи',e:'Mumbai',c:'IN',lat:19.076,lon:72.8777,z:'Asia/Kolkata'},
+{r:'Дели',e:'Delhi',c:'IN',lat:28.7041,lon:77.1025,z:'Asia/Kolkata'},
+{r:'Бангалор',e:'Bangalore',c:'IN',lat:12.9716,lon:77.5946,z:'Asia/Kolkata'},
+{r:'Калькутта',e:'Kolkata',c:'IN',lat:22.5726,lon:88.3639,z:'Asia/Kolkata'},
+{r:'Карачи',e:'Karachi',c:'PK',lat:24.8607,lon:67.0011,z:'Asia/Karachi'},
+{r:'Исламабад',e:'Islamabad',c:'PK',lat:33.6844,lon:73.0479,z:'Asia/Karachi'},
+{r:'Дакка',e:'Dhaka',c:'BD',lat:23.8103,lon:90.4125,z:'Asia/Dhaka'},
+{r:'Коломбо',e:'Colombo',c:'LK',lat:6.9271,lon:79.8612,z:'Asia/Colombo'},
+{r:'Катманду',e:'Kathmandu',c:'NP',lat:27.7172,lon:85.324,z:'Asia/Kathmandu'},
+{r:'Бангкок',e:'Bangkok',c:'TH',lat:13.7563,lon:100.5018,z:'Asia/Bangkok'},
+{r:'Ханой',e:'Hanoi',c:'VN',lat:21.0278,lon:105.8342,z:'Asia/Ho_Chi_Minh'},
+{r:'Хошимин',e:'Ho Chi Minh City',c:'VN',lat:10.8231,lon:106.6297,z:'Asia/Ho_Chi_Minh'},
+{r:'Джакарта',e:'Jakarta',c:'ID',lat:-6.2088,lon:106.8456,z:'Asia/Jakarta'},
+{r:'Манила',e:'Manila',c:'PH',lat:14.5995,lon:120.9842,z:'Asia/Manila'},
+{r:'Куала-Лумпур',e:'Kuala Lumpur',c:'MY',lat:3.139,lon:101.6869,z:'Asia/Kuala_Lumpur'},
+{r:'Сингапур',e:'Singapore',c:'SG',lat:1.3521,lon:103.8198,z:'Asia/Singapore'},
+{r:'Пекин',e:'Beijing',c:'CN',lat:39.9042,lon:116.4074,z:'Asia/Shanghai'},
+{r:'Шанхай',e:'Shanghai',c:'CN',lat:31.2304,lon:121.4737,z:'Asia/Shanghai'},
+{r:'Гонконг',e:'Hong Kong',c:'HK',lat:22.3193,lon:114.1694,z:'Asia/Hong_Kong'},
+{r:'Тайбэй',e:'Taipei',c:'TW',lat:25.033,lon:121.5654,z:'Asia/Taipei'},
+{r:'Сеул',e:'Seoul',c:'KR',lat:37.5665,lon:126.978,z:'Asia/Seoul'},
+{r:'Токио',e:'Tokyo',c:'JP',lat:35.6762,lon:139.6503,z:'Asia/Tokyo'},
+{r:'Осака',e:'Osaka',c:'JP',lat:34.6937,lon:135.5023,z:'Asia/Tokyo'},
+{r:'Улан-Батор',e:'Ulaanbaatar',c:'MN',lat:47.8864,lon:106.9057,z:'Asia/Ulaanbaatar'},
+{r:'Сидней',e:'Sydney',c:'AU',lat:-33.8688,lon:151.2093,z:'Australia/Sydney'},
+{r:'Мельбурн',e:'Melbourne',c:'AU',lat:-37.8136,lon:144.9631,z:'Australia/Melbourne'},
+{r:'Брисбен',e:'Brisbane',c:'AU',lat:-27.4698,lon:153.0251,z:'Australia/Brisbane'},
+{r:'Перт',e:'Perth',c:'AU',lat:-31.9505,lon:115.8605,z:'Australia/Perth'},
+{r:'Окленд',e:'Auckland',c:'NZ',lat:-36.8485,lon:174.7633,z:'Pacific/Auckland'},
+{r:'Нью-Йорк',e:'New York',c:'US',lat:40.7128,lon:-74.006,z:'America/New_York'},
+{r:'Лос-Анджелес',e:'Los Angeles',c:'US',lat:34.0522,lon:-118.2437,z:'America/Los_Angeles'},
+{r:'Чикаго',e:'Chicago',c:'US',lat:41.8781,lon:-87.6298,z:'America/Chicago'},
+{r:'Хьюстон',e:'Houston',c:'US',lat:29.7604,lon:-95.3698,z:'America/Chicago'},
+{r:'Сан-Франциско',e:'San Francisco',c:'US',lat:37.7749,lon:-122.4194,z:'America/Los_Angeles'},
+{r:'Майами',e:'Miami',c:'US',lat:25.7617,lon:-80.1918,z:'America/New_York'},
+{r:'Торонто',e:'Toronto',c:'CA',lat:43.6532,lon:-79.3832,z:'America/Toronto'},
+{r:'Ванкувер',e:'Vancouver',c:'CA',lat:49.2827,lon:-123.1207,z:'America/Vancouver'},
+{r:'Мехико',e:'Mexico City',c:'MX',lat:19.4326,lon:-99.1332,z:'America/Mexico_City'},
+{r:'Сан-Паулу',e:'Sao Paulo',c:'BR',lat:-23.5505,lon:-46.6333,z:'America/Sao_Paulo'},
+{r:'Рио-де-Жанейро',e:'Rio de Janeiro',c:'BR',lat:-22.9068,lon:-43.1729,z:'America/Sao_Paulo'},
+{r:'Буэнос-Айрес',e:'Buenos Aires',c:'AR',lat:-34.6037,lon:-58.3816,z:'America/Argentina/Buenos_Aires'},
+{r:'Сантьяго',e:'Santiago',c:'CL',lat:-33.4489,lon:-70.6693,z:'America/Santiago'},
+{r:'Богота',e:'Bogota',c:'CO',lat:4.711,lon:-74.0721,z:'America/Bogota'},
+{r:'Лима',e:'Lima',c:'PE',lat:-12.0464,lon:-77.0428,z:'America/Lima'},
+{r:'Каракас',e:'Caracas',c:'VE',lat:10.4806,lon:-66.9036,z:'America/Caracas'},
+{r:'Гавана',e:'Havana',c:'CU',lat:23.1136,lon:-82.3666,z:'America/Havana'}
+];
+
+function normStr(s){ return (s||'').toLowerCase().replace(/[̀-ͯ]/g,''); }
+function searchCities(q){
+  q=normStr(q.trim()); if(!q) return [];
+  return CITIES.filter(c=>normStr(c.r).includes(q)||normStr(c.e).includes(q)).slice(0,8);
+}
+// "+HH:MM" / "-HH:MM" - always shows an explicit sign, never bare hours
+function formatOffset(h){
+  const sign=h<0?'-':'+', a=Math.abs(h); let hh=Math.floor(a+1e-9), mm=Math.round((a-hh)*60);
+  if(mm===60){mm=0;hh++;}
+  return sign+String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');
+}
+function parseOffset(str){
+  const m=/^\s*([+-])?\s*(\d{1,2})(?::?(\d{2}))?\s*$/.exec(str||'');
+  if(!m) return NaN;
+  return (m[1]==='-'?-1:1)*(+m[2]+(+(m[3]||0))/60);
+}
+// Reads the UTC offset for a given IANA zone AT the given calendar date/time
+// straight from the browser's built-in tz database (ICU/CLDR) - the same
+// historical-transition table used by the OS. This is what makes manual
+// pre-1970 offset entry unnecessary in the common case.
+function ianaOffset(zone,y,mo,da,hh,mi){
+  try{
+    const guess=new Date(Date.UTC(y,mo-1,da,hh,mi));
+    const fmt=new Intl.DateTimeFormat('en-US',{timeZone:zone,timeZoneName:'longOffset',hour12:false,
+      year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+    const part=fmt.formatToParts(guess).find(p=>p.type==='timeZoneName');
+    if(!part) return null;
+    const m=/GMT([+-])(\d{1,2})(?::(\d{2}))?/.exec(part.value);
+    if(!m) return 0;
+    return (m[1]==='-'?-1:1)*(+m[2]+(+(m[3]||0))/60);
+  }catch(e){ return null; }
+}
+
+function computeChart(y,mo,day,localH,tzOff,lat,lng){
+  const utH=localH-tzOff, d=dayNumber(y,mo,day,utH), sun=sunPos(d), ecl=23.4393-3.563e-7*d, pos={};
+  pos.Sun={lon:sun.lon}; pos.Moon=moonPos(d,sun);
+  ['Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune'].forEach(n=>pos[n]=planetPos(n,d,sun));
+  pos.Pluto=plutoPos(d,sun);
+  const gmst0=rev(sun.Ls+180), lst=rev(gmst0+utH*15.04107+lng), ramc=lst;
+  const mc=atan2d(sind(ramc),cosd(ramc)*cosd(ecl));
+  let asc=atan2d(cosd(ramc),-(sind(ramc)*cosd(ecl)+tand(lat)*sind(ecl)));
+  if(rev(asc-mc)>180) asc=rev(asc+180);
+  return {pos,asc,mc,ecl};
+}
+function houseOf(lon,asc){return ((Math.floor(rev(lon)/30)-Math.floor(rev(asc)/30)+12)%12)+1;}
+function fmtPos(lon){
+  const s=Math.floor(rev(lon)/30),deg=rev(lon)-s*30,dd=Math.floor(deg),mm=Math.floor((deg-dd)*60);
+  return {sign:s,str:`${dd}° ${SIGN_ABBR[LANG][s]} ${String(mm).padStart(2,'0')}′`};
+}
+function findAspects(pos){
+  const out=[];
+  for(let a=0;a<BODIES.length;a++)for(let b=a+1;b<BODIES.length;b++){
+    let diff=Math.abs(rev(pos[BODIES[a]].lon-pos[BODIES[b]].lon)); if(diff>180)diff=360-diff;
+    for(const asp of ASPECTS){const orb=Math.abs(diff-asp.angle);if(orb<=asp.orb){out.push({p1:BODIES[a],p2:BODIES[b],asp,orb});break;}}
+  }
+  return out;
+}
+
+/* ---------- interpretation (offline stub) ---------- */
+function natalReading(ch){
+  const p=ch.pos,L=[],asS=fmtPos(ch.asc).sign,suS=fmtPos(p.Sun.lon).sign,moS=fmtPos(p.Moon.lon).sign;
+  const tr=SIGN_TRAIT[LANG],fn=PLANET_FN[LANG];
+  if(LANG==='ru'){
+    L.push(`<b>Асцендент</b> в знаке ${SIGN_NAME.ru[asS]} задаёт первое впечатление: ${tr[asS]}.`);
+    L.push(`<b>Солнце</b> в ${SIGN_NAME.ru[suS]}: ваше ${fn.Sun} проявляется как ${tr[suS]}.`);
+    L.push(`<b>Луна</b> в ${SIGN_NAME.ru[moS]}: ваши ${fn.Moon} - ${tr[moS]}.`);
+  } else {
+    L.push(`Your <b>Ascendant</b> in ${SIGN_NAME.en[asS]} sets a first impression that is ${tr[asS]}.`);
+    L.push(`<b>Sun</b> in ${SIGN_NAME.en[suS]}: your ${fn.Sun} expresses as ${tr[suS]}.`);
+    L.push(`<b>Moon</b> in ${SIGN_NAME.en[moS]}: your ${fn.Moon} are ${tr[moS]}.`);
+  }
+  findAspects(p).filter(x=>['Sun','Moon','Venus','Mars'].includes(x.p1)||['Sun','Moon','Venus','Mars'].includes(x.p2))
+    .sort((a,b)=>a.orb-b.orb).slice(0,3).forEach(x=>{
+      const kindTxt=LANG==='ru'
+        ?(x.asp.kind==='hard'?'трение, толкающее к росту':x.asp.kind==='harm'?'лёгкий поддерживающий поток':'сплав, усиливающий обе стороны')
+        :(x.asp.kind==='hard'?'a friction that forces growth':x.asp.kind==='harm'?'an easy, supportive flow':'a fused, amplified blend');
+      L.push(`${GLYPH[x.p1]} <b>${ASPECT_NAME[LANG][x.asp.name]}</b> ${GLYPH[x.p2]} <span class="tiny">(${t('orb')} ${x.orb.toFixed(1)}°)</span> - ${kindTxt}.`);
+    });
+  return L.map(l=>`<div class="learn-line">${l}</div>`).join('');
+}
+
+/* ---------- wheel (traditional style, signs clockwise from Aries) ---------- */
+let CURRENT=null, ISO=null;
+const S=360, C=S/2;
+function polar(lon,r){const a=(180-lon)*D2R;return [C+r*Math.cos(a), C-r*Math.sin(a)];}
+function sector(l0,l1,r1,r2,fill){
+  const [ax,ay]=polar(l0,r2),[bx,by]=polar(l1,r2),[cx,cy]=polar(l1,r1),[dx,dy]=polar(l0,r1);
+  return `<path d="M${ax.toFixed(1)} ${ay.toFixed(1)} A${r2} ${r2} 0 0 1 ${bx.toFixed(1)} ${by.toFixed(1)} L${cx.toFixed(1)} ${cy.toFixed(1)} A${r1} ${r1} 0 0 0 ${dx.toFixed(1)} ${dy.toFixed(1)} Z" fill="${fill}" fill-opacity="0.55" stroke="var(--line)" stroke-width="0.5"/>`;
+}
+function drawWheel(ch){
+  const rOut=C-3, rZod=C-30, rHou=C-52, rPl=C-72, rAsp=C-90, asc=ch.asc;
+  let s=`<svg viewBox="0 0 ${S} ${S}" role="img">`;
+  s+=ZODIAC_DEFS;
+  s+=`<circle cx="${C}" cy="${C}" r="${rHou}" fill="var(--wheelbg)"/>`;
+  // zodiac band
+  const gs=17;
+  for(let i=0;i<12;i++){
+    s+=sector(i*30,(i+1)*30,rZod,rOut,ELEM_VAR[i%4]);
+    const [gx,gy]=polar(i*30+15,(rZod+rOut)/2);
+    s+=`<use href="#z${i}" x="${(gx-gs/2).toFixed(1)}" y="${(gy-gs/2).toFixed(1)}" width="${gs}" height="${gs}" color="var(--ink)"/>`;
+  }
+  // house ring: whole-sign, roman numerals, cusp ticks at sign boundaries
+  const ascSign=Math.floor(rev(asc)/30);
+  for(let h=0;h<12;h++){
+    const sIdx=(ascSign+h)%12, cuspLon=sIdx*30;
+    const [x1,y1]=polar(cuspLon,rHou),[x2,y2]=polar(cuspLon,rZod);
+    s+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="var(--line)" stroke-dasharray="2 3"/>`;
+    const [rx,ry]=polar(sIdx*30+15,(rHou+rZod)/2);
+    s+=`<text x="${rx.toFixed(1)}" y="${(ry+4).toFixed(1)}" text-anchor="middle" font-size="10" fill="var(--ink3)">${ROMAN[h]}</text>`;
+  }
+  // angles ASC/DSC/MC/IC
+  [[asc,'Asc','var(--axis)'],[rev(asc+180),'Dsc','var(--axis)'],[ch.mc,'MC','var(--mc)'],[rev(ch.mc+180),'IC','var(--mc)']].forEach(([lon,lbl,col])=>{
+    const [x2,y2]=polar(lon,rOut);
+    s+=`<line x1="${C}" y1="${C}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${col}" stroke-width="1.3" opacity="0.7"/>`;
+    const [lx,ly]=polar(lon,rOut+0);
+    s+=`<text x="${lx.toFixed(1)}" y="${(ly-3).toFixed(1)}" text-anchor="middle" font-size="10" fill="${col}">${lbl}</text>`;
+  });
+  // aspect lines
+  const asps=findAspects(ch.pos);
+  asps.forEach(a=>{
+    const [x1,y1]=polar(ch.pos[a.p1].lon,rAsp),[x2,y2]=polar(ch.pos[a.p2].lon,rAsp);
+    const dim=ISO&&ISO!==a.p1&&ISO!==a.p2;
+    s+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${a.asp.color}" stroke-width="1" opacity="${dim?0.07:(ISO?0.95:0.4)}"/>`;
+  });
+  // planets
+  const placed=[];
+  BODIES.forEach(n=>{
+    let disp=ch.pos[n].lon;
+    placed.forEach(pl=>{if(Math.abs(rev(disp-pl))<7||Math.abs(rev(pl-disp))<7)disp=rev(disp+7);});
+    placed.push(disp);
+    const [px,py]=polar(disp,rPl);
+    const dim=ISO&&ISO!==n&&!asps.some(a=>(a.p1===ISO&&a.p2===n)||(a.p2===ISO&&a.p1===n));
+    const hot=ISO===n;
+    const [tx,ty]=polar(ch.pos[n].lon,rAsp+3);
+    s+=`<g class="pl" data-p="${n}" style="cursor:pointer" opacity="${dim?0.25:1}">`;
+    s+=`<line x1="${tx.toFixed(1)}" y1="${ty.toFixed(1)}" x2="${px.toFixed(1)}" y2="${py.toFixed(1)}" stroke="var(--ink3)" stroke-width="0.5" opacity="0.5"/>`;
+    s+=`<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="12" fill="var(--paper)" stroke="${hot?'var(--accent)':'var(--line)'}" stroke-width="${hot?2:1}"/>`;
+    s+=`<text x="${px.toFixed(1)}" y="${(py+5).toFixed(1)}" text-anchor="middle" font-size="15" fill="var(--ink)">${GLYPH[n]}</text>`;
+    s+=`</g>`;
+  });
+  s+=`</svg>`;
+  document.getElementById('wheel').innerHTML=s;
+  document.querySelectorAll('#wheel .pl').forEach(g=>g.addEventListener('click',()=>{const p=g.dataset.p;ISO=(ISO===p?null:p);drawWheel(ch);showDetail(p,ch);}));
+}
+function showDetail(p,ch){
+  const el=document.getElementById('detail'); el.classList.remove('empty');
+  const f=fmtPos(ch.pos[p].lon),hs=houseOf(ch.pos[p].lon,ch.asc);
+  const asps=findAspects(ch.pos).filter(a=>a.p1===p||a.p2===p);
+  let html=`<div style="font-size:16px"><span class="glyph">${GLYPH[p]}</span> <b>${PN(p)}</b> - ${f.str}, ${t('house')} ${hs}</div>`;
+  html+=`<div class="tiny" style="margin:4px 0 8px">${PLANET_FN[LANG][p]||''}, ${LANG==='ru'?'проявлено как':'expressed as'} ${SIGN_TRAIT[LANG][f.sign]}.</div>`;
+  html+= asps.length? asps.sort((a,b)=>a.orb-b.orb).map(a=>{
+      const other=a.p1===p?a.p2:a.p1;
+      return `<div style="padding:3px 0"><span style="color:${a.asp.color}">${ASPECT_GLYPH[a.asp.name]} ${ASPECT_NAME[LANG][a.asp.name]}</span> ${GLYPH[other]} ${PN(other)} <span class="tiny">${t('orb')} ${a.orb.toFixed(1)}°</span></div>`;
+    }).join('') : `<div class="tiny">${t('noaspects')}</div>`;
+  el.innerHTML=html;
+}
+
+/* ---------- transit engine + on-device personalization (no API) ---------- */
+const LKEY='astrarium_learn_v1';
+function loadLearn(){try{return JSON.parse(localStorage.getItem(LKEY))||{}}catch(e){return{}}}
+function saveLearn(o){localStorage.setItem(LKEY,JSON.stringify(o));}
+function learn(){const o=loadLearn();o.obs=o.obs||[];o.feat=o.feat||{};return o;}
+function featStat(o,k){return o.feat[k]||{rSum:0,rN:0,vSum:0,vN:0};}
+function learnedRes(o,k){const f=featStat(o,k);return (2+f.rSum)/(2+f.rN);}
+function learnedVal(o,k){const f=featStat(o,k);return (0+f.vSum)/(2+f.vN);}
+function currentTransits(ch){
+  const now=new Date(),utH=now.getUTCHours()+now.getUTCMinutes()/60;
+  const tp=computeChart(now.getUTCFullYear(),now.getUTCMonth()+1,now.getUTCDate(),utH,0,0,0).pos;
+  const hits=[];
+  ['Jupiter','Saturn','Uranus','Neptune','Pluto','Mars','Sun','Venus','Mercury'].forEach(T=>{
+    BODIES.concat(['ASC','MC']).forEach(np=>{
+      const nlon=np==='ASC'?ch.asc:np==='MC'?ch.mc:ch.pos[np].lon;
+      let diff=Math.abs(rev(tp[T].lon-nlon));if(diff>180)diff=360-diff;
+      for(const asp of ASPECTS){const orb=Math.abs(diff-asp.angle),maxo=Math.min(asp.orb,SPEED_ORB[T]+2);if(orb<=maxo){hits.push({tp:T,np,asp,orb,maxo});break;}}
+    });
+  });
+  return hits;
+}
+function personalWeight(o,h){
+  const base=RECEIVER_RANK[h.np]||0.6, intensity=Math.cos((h.orb/h.maxo)*Math.PI/2)**2;
+  const personal=(learnedRes(o,'tp:'+h.tp)+learnedRes(o,'np:'+h.np)+learnedRes(o,'as:'+h.asp.name))/3;
+  return base*intensity*personal;
+}
+const sig=h=>`${h.tp}.${h.asp.name}.${h.np}`;
+function transitText(o,h){
+  const v=(learnedVal(o,'tp:'+h.tp)+learnedVal(o,'np:'+h.np))/2, hard=h.asp.kind==='hard';
+  let frame;
+  if(LANG==='ru'){
+    if(v<=-0.6) frame=hard?'обычно ощущается тяжело именно у вас, берегите силы':'мягкий подъём, который вам обычно в радость';
+    else if(v>=0.6) frame=hard?'вы проживаете это как продуктивное давление, а не как надрыв':'лёгкое, заряжающее окно для вас';
+    else frame=hard?'точка трения, требующая настройки':'поддерживающее, текучее влияние';
+    return `${GLYPH[h.tp]} ${PN(h.tp)} ${ASPECT_NAME.ru[h.asp.name]} к вашему ${GLYPH[h.np]||''} ${PN(h.np)} - ${frame}.`;
+  } else {
+    if(v<=-0.6) frame=hard?'tends to land heavily for you, protect your energy':'a smooth lift you usually enjoy';
+    else if(v>=0.6) frame=hard?'you experience this as productive pressure, not strain':'an easy, energizing window for you';
+    else frame=hard?'a friction point that asks for adjustment':'a supportive, flowing influence';
+    return `${GLYPH[h.tp]} ${h.tp} ${h.asp.name} your ${GLYPH[h.np]||''} ${h.np} - ${frame}.`;
+  }
+}
+function recall(o,s){
+  const past=o.obs.filter(x=>x.sig===s).sort((a,b)=>b.t-a.t)[0]; if(!past)return '';
+  const dt=new Date(past.t).toLocaleDateString(LANG==='ru'?'ru-RU':'en-US');
+  return `<div class="tiny" style="margin-top:6px">↺ ${t('lasttime')} (${dt}): ${past.r||'?'}/3${past.note?' — "'+past.note+'"':''}</div>`;
+}
+function renderTransits(ch){
+  const o=learn();
+  const hits=currentTransits(ch)
+    .filter(h=>!(['Uranus','Neptune','Pluto'].includes(h.tp)&&['Uranus','Neptune','Pluto'].includes(h.np)))
+    .map(h=>({h,w:personalWeight(o,h)})).sort((a,b)=>b.w-a.w).slice(0,4);
+  const box=document.getElementById('transitlist');
+  if(!hits.length){box.innerHTML=`<p class="tiny">${t('notransits')}</p>`;renderLearned();return;}
+  box.innerHTML=hits.map(({h,w})=>{
+    const s=sig(h), intensity=Math.cos((h.orb/h.maxo)*Math.PI/2)**2;
+    const rated=o.obs.find(x=>x.sig===s&&Date.now()-x.t<86400000*3);
+    return `<div class="transit" data-sig="${s}">
+      <div class="head"><span class="glyph" style="font-size:18px">${GLYPH[h.tp]}</span><span>${transitText(o,h)}</span></div>
+      <div class="tiny">${t('orb')} ${h.orb.toFixed(1)}° · ${t('weight')} ${w.toFixed(2)}</div>
+      <div class="bar"><i style="width:${Math.round(intensity*100)}%"></i></div>
+      ${recall(o,s)}
+      <div class="rate">
+        <span class="tiny">${t('landq')}</span>
+        <span class="stars" data-sig="${s}">${[1,2,3].map(n=>`<span data-r="${n}">${rated&&rated.r>=n?'<b>★</b>':'☆'}</span>`).join('')}</span>
+        <span class="tiny" style="margin-left:8px">${t('felt')}</span>
+        ${[['hard','−'],['neutral','·'],['easy','+']].map(([k,g])=>`<span class="chip val ${rated&&rated.val===k?'on':''}" data-sig="${s}" data-val="${k}">${g}</span>`).join('')}
+        ${AREA_KEYS.map(a=>`<span class="chip area ${rated&&rated.area===a?'on':''}" data-sig="${s}" data-area="${a}">${AREA_NAME[LANG][a]}</span>`).join('')}
+      </div></div>`;
+  }).join('');
+  box.querySelectorAll('.stars span[data-r]').forEach(st=>st.addEventListener('click',e=>rate(hits,e.currentTarget.parentElement.dataset.sig,{r:+e.currentTarget.dataset.r})));
+  box.querySelectorAll('.chip.val').forEach(c=>c.addEventListener('click',()=>rate(hits,c.dataset.sig,{val:c.dataset.val})));
+  box.querySelectorAll('.chip.area').forEach(c=>c.addEventListener('click',()=>rate(hits,c.dataset.sig,{area:c.dataset.area})));
+  renderLearned();
+}
+function rate(hits,s,patch){
+  const o=learn(),hit=hits.find(x=>sig(x.h)===s); if(!hit)return; const h=hit.h;
+  let obs=o.obs.find(x=>x.sig===s&&Date.now()-x.t<86400000*3);
+  if(!obs){obs={sig:s,t:Date.now(),tp:h.tp,np:h.np,asp:h.asp.name,r:null,val:null,area:null,note:''};o.obs.push(obs);}
+  Object.assign(obs,patch); obs.t=Date.now();
+  o.feat={};
+  o.obs.forEach(x=>{
+    const rv=x.r!=null?x.r:1.5, vv=x.val==='hard'?-1.5:x.val==='easy'?1.5:x.val==='neutral'?0:null;
+    ['tp:'+x.tp,'np:'+x.np,'as:'+x.asp].forEach(k=>{const f=o.feat[k]=o.feat[k]||{rSum:0,rN:0,vSum:0,vN:0};if(x.r!=null){f.rSum+=rv;f.rN++;}if(vv!=null){f.vSum+=vv;f.vN++;}});
+    if(x.area){const k='ar:'+x.area;o.feat[k]=o.feat[k]||{rSum:0,rN:0,vSum:0,vN:0};o.feat[k].rN++;}
+  });
+  saveLearn(o); renderTransits(CURRENT);
+}
+function renderLearned(){
+  const o=learn(),box=document.getElementById('learnedbox');
+  if(!o.obs.length){box.innerHTML=`<p class="tiny">${t('learnempty')}</p>`;return;}
+  const L=[];
+  ['Jupiter','Saturn','Uranus','Neptune','Pluto','Mars','Sun','Venus','Mercury'].map(p=>({p,f:featStat(o,'tp:'+p)})).filter(x=>x.f.rN>0)
+    .sort((a,b)=>learnedRes(o,'tp:'+b.p)-learnedRes(o,'tp:'+a.p)).slice(0,3).forEach(({p})=>{
+      const r=learnedRes(o,'tp:'+p),v=learnedVal(o,'tp:'+p);
+      if(LANG==='ru'){
+        const rl=r>2.2?'звучат сильно':r<1.2?'почти не отзываются':'звучат умеренно', vl=v>0.5?'как заряжающие':v<-0.5?'как тяжёлые':'нейтрально';
+        L.push(`Транзиты <b>${GLYPH[p]} ${PN(p)}</b> ${rl} у вас, ощущаются ${vl}. <span class="tiny">(резонанс ${r.toFixed(1)}/3, валентность ${v>0?'+':''}${v.toFixed(1)})</span>`);
+      } else {
+        const rl=r>2.2?'land strongly':r<1.2?'barely register':'land moderately', vl=v>0.5?'as energizing':v<-0.5?'as heavy':'neutrally';
+        L.push(`<b>${GLYPH[p]} ${p}</b> transits ${rl} for you, felt ${vl}. <span class="tiny">(resonance ${r.toFixed(1)}/3, valence ${v>0?'+':''}${v.toFixed(1)})</span>`);
+      }
+    });
+  ['Sun','Moon','ASC','MC','Venus','Mars'].map(p=>({p,f:featStat(o,'np:'+p)})).filter(x=>x.f.rN>0)
+    .sort((a,b)=>b.f.rN-a.f.rN).slice(0,2).forEach(({p})=>{
+      const r=learnedRes(o,'np:'+p);
+      L.push(LANG==='ru'
+        ?`Транзиты к вашему <b>${GLYPH[p]||''} ${PN(p)}</b> ${r>2?'много значат':'значат умеренно'} для вас <span class="tiny">(${r.toFixed(1)}/3)</span>.`
+        :`Transits to your <b>${GLYPH[p]||''} ${p}</b> ${r>2?'matter a lot':'matter moderately'} to you <span class="tiny">(${r.toFixed(1)}/3)</span>.`);
+    });
+  const ar=AREA_KEYS.map(a=>({a,n:(o.feat['ar:'+a]||{rN:0}).rN})).filter(x=>x.n>0).sort((a,b)=>b.n-a.n);
+  if(ar.length) L.push(LANG==='ru'
+    ?`Чаще всего вы связываете транзиты со сферой <b>${AREA_NAME.ru[ar[0].a]}</b>. <span class="tiny">(наблюдений: ${o.obs.length})</span>`
+    :`You most often connect transits to <b>${AREA_NAME.en[ar[0].a]}</b>. <span class="tiny">(${o.obs.length} observations)</span>`);
+  box.innerHTML=L.map(l=>`<div class="learn-line">${l}</div>`).join('');
+}
+
+/* ---------- positions ---------- */
+function renderPositions(ch){
+  let rows=[['ASC',ch.asc],['MC',ch.mc]].map(([n,lon])=>{
+    return `<div class="planet-row"><span class="g" style="color:var(--axis)">${n==='ASC'?'Asc':'MC'}</span><span class="nm">${PN(n)}</span><span class="pos deg">${fmtPos(lon).str}</span></div>`;
+  }).join('');
+  rows+=BODIES.map(n=>{
+    const f=fmtPos(ch.pos[n].lon),hs=houseOf(ch.pos[n].lon,ch.asc);
+    return `<div class="planet-row"><span class="g glyph">${GLYPH[n]}</span><span class="nm">${PN(n)}</span><span class="pos deg">${f.str}</span><span class="hs">${t('house')} ${hs}</span></div>`;
+  }).join('');
+  document.getElementById('positions').innerHTML=rows;
+}
+
+/* ---------- run + i18n apply ---------- */
+let SELECTED_CITY=null, TZ_AUTO=true;
+function updateTzAuto(){
+  if(!TZ_AUTO||!SELECTED_CITY) return;
+  const [y,mo,da]=document.getElementById('date').value.split('-').map(Number);
+  const [hh,mi]=document.getElementById('time').value.split(':').map(Number);
+  const off=ianaOffset(SELECTED_CITY.z,y,mo,da,hh,mi);
+  if(off!=null) document.getElementById('tz').value=formatOffset(off);
+}
+function renderCityList(items){
+  const box=document.getElementById('citylist');
+  if(!items.length){box.style.display='none';box.innerHTML='';return;}
+  box.innerHTML=items.map(c=>`<div><span>${LANG==='ru'?c.r:c.e}</span><span class="cc">${c.c}</span></div>`).join('');
+  box.style.display='block';
+  [...box.children].forEach((el,i)=>el.addEventListener('mousedown',ev=>{ev.preventDefault();selectCity(items[i]);}));
+}
+function selectCity(c){
+  SELECTED_CITY=c; TZ_AUTO=true;
+  document.getElementById('city').value=LANG==='ru'?c.r:c.e;
+  document.getElementById('lat').value=c.lat;
+  document.getElementById('lng').value=c.lon;
+  document.getElementById('citylist').style.display='none';
+  updateTzAuto();
+}
+function applyStatic(){
+  document.querySelectorAll('[data-i]').forEach(el=>el.textContent=t(el.dataset.i));
+  document.querySelectorAll('.lang button').forEach(b=>b.classList.toggle('on',b.dataset.lang===LANG));
+  document.getElementById('detail').textContent=t('tapdetail');
+  document.getElementById('city').placeholder=t('cityph');
+  if(SELECTED_CITY) document.getElementById('city').value=LANG==='ru'?SELECTED_CITY.r:SELECTED_CITY.e;
+  document.title='Astrarium';
+}
+function run(){
+  const [y,mo,da]=document.getElementById('date').value.split('-').map(Number);
+  const [hh,mi]=document.getElementById('time').value.split(':').map(Number);
+  const lat=+document.getElementById('lat').value,lng=+document.getElementById('lng').value,tz=parseOffset(document.getElementById('tz').value);
+  CURRENT=computeChart(y,mo,da,hh+mi/60,tz,lat,lng); ISO=null;
+  drawWheel(CURRENT); renderPositions(CURRENT);
+  document.getElementById('reading').innerHTML=natalReading(CURRENT);
+  renderTransits(CURRENT);
+  document.getElementById('detail').className='detail empty';
+  document.getElementById('detail').textContent=t('tapdetail');
+}
+document.getElementById('calc').addEventListener('click',run);
+document.getElementById('reset').addEventListener('click',()=>{localStorage.removeItem(LKEY);renderTransits(CURRENT);});
+document.querySelectorAll('.lang button').forEach(b=>b.addEventListener('click',()=>{
+  LANG=b.dataset.lang; localStorage.setItem('astrarium_lang',LANG); applyStatic(); run();
+}));
+document.getElementById('city').addEventListener('input',e=>renderCityList(searchCities(e.target.value)));
+document.getElementById('city').addEventListener('focus',e=>renderCityList(searchCities(e.target.value)));
+document.getElementById('city').addEventListener('blur',()=>{setTimeout(()=>{document.getElementById('citylist').style.display='none';},150);});
+document.getElementById('date').addEventListener('change',updateTzAuto);
+document.getElementById('time').addEventListener('change',updateTzAuto);
+document.getElementById('tz').addEventListener('input',()=>{TZ_AUTO=false;});
+SELECTED_CITY=CITIES.find(c=>c.e==='Saint Petersburg')||null;
+if(SELECTED_CITY) document.getElementById('city').value=LANG==='ru'?SELECTED_CITY.r:SELECTED_CITY.e;
+updateTzAuto();
+applyStatic(); run();
+</script>
