@@ -66,6 +66,8 @@ svg{display:block;width:100%;height:auto;touch-action:manipulation}
 .detail{background:var(--paper3);border-radius:12px;padding:12px;margin-top:10px;min-height:20px}
 .detail.empty{color:var(--ink3);font-style:italic}
 .transit{border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0;background:var(--paper)}
+.daysyn{border:1px solid var(--accent);border-radius:12px;padding:12px 14px;margin:0 0 12px;background:var(--paper3);font-size:14px;line-height:1.55}
+.daysyn:empty{display:none}
 .transit .head{display:flex;align-items:center;gap:8px;font-size:15px}
 .transit .bar{height:6px;border-radius:3px;background:var(--paper3);margin:8px 0;overflow:hidden}
 .transit .bar i{display:block;height:100%;background:var(--accent)}
@@ -154,6 +156,11 @@ details.unit .dt{padding:0 0 10px;color:var(--ink2);font-size:14px}
     <div class="card">
       <h2 data-i="transits"></h2>
       <p class="tiny" style="margin-top:0" data-i="transintro"></p>
+      <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin:0 0 12px">
+        <div style="flex:1;min-width:150px"><label data-i="transitdate"></label><input id="transitDate" type="date"></div>
+        <button id="transitToday" data-i="todaybtn"></button>
+      </div>
+      <div id="daysyn" class="daysyn"></div>
       <div id="transitlist"></div>
     </div>
 
@@ -200,8 +207,10 @@ const STR = {
   posnote:{ru:'Движок: компактный аналитический ряд, целиком офлайн. Это шов, куда встаёт Swiss Ephemeris (WASM) для точности до угловой секунды. Лилит и узлы - средние. Хирон появится вместе со Swiss Ephemeris.',en:'Engine: compact analytic series, fully offline. This is the seam where Swiss Ephemeris (WASM) drops in for arc-second grade. Lilith and nodes are mean. Chiron arrives with Swiss Ephemeris.'},
   reading:{ru:'Разбор карты',en:'Reading'},
   corpusnote:{ru:'Тексты - структурная заготовка: кратко + подробнее по касанию. Настоящий корпус интерпретаций подключается отдельно.',en:'Texts are a structural stub: short + detail on tap. The real interpretation corpus plugs in separately.'},
-  transits:{ru:'Транзиты на сегодня',en:"Today's transits"},
-  transintro:{ru:'Транзитные планеты сегодня к вашей натальной карте. Оцените, как каждый реально ощущается, движок подстраивает ранжирование и тон полностью без API.',en:'Transiting planets today vs your natal chart. Rate how each one actually lands, the engine adapts ranking and tone with zero API.'},
+  transits:{ru:'Транзиты',en:'Transits'},
+  transintro:{ru:'Транзитные планеты на выбранную дату к вашей натальной карте. Оцените, как каждый реально ощущается, движок подстраивает ранжирование и тон полностью без API.',en:'Transiting planets on the chosen date vs your natal chart. Rate how each one actually lands, the engine adapts ranking and tone with zero API.'},
+  transitdate:{ru:'Дата транзита',en:'Transit date'},
+  todaybtn:{ru:'Сегодня',en:'Today'},
   learned:{ru:'Что Astrarium узнал о вас',en:'What Astrarium has learned about you'},
   forget:{ru:'Забыть всё',en:'Forget everything'},
   landq:{ru:'Зашло?',en:'Did it land?'}, felt:{ru:'Ощущалось:',en:'Felt:'},
@@ -658,6 +667,55 @@ const DIG_NOTE={
   fall:'Здесь звучит тише обычного и просит больше сознательного внимания.'
 };
 const firstSent=s=>{const m=/^[^.!?]*[.!?]/.exec(s||'');return m?m[0].trim():(s||'');};
+const lc=s=>s?s.charAt(0).toLowerCase()+s.slice(1):s;
+const uc=s=>s?s.charAt(0).toUpperCase()+s.slice(1):s;
+
+/* Aspect clauses are partner-aware: the same trine reads differently depending
+   on whether the OTHER planet is itself strong (ruler/exalt), weak
+   (detriment/fall) or neutral where it sits. This is what "не хватает
+   уточнения знака и дома второй планеты" asked for. */
+const ASPECT_PARTNER_FRAME={
+  hard:{
+    strong:(o,l)=>`Есть трение с ${o} (${l}) — но там планета сама по себе сильна, так что трение работает как топливо, а не как помеха.`,
+    weak:(o,l)=>`Есть трение с ${o} (${l}) — там планета и так слабовата, поэтому нагрузка ощущается сильнее обычного и просит больше сознательных усилий.`,
+    neutral:(o,l)=>`Есть трение с ${o} (${l}) — оно требует настройки, без особого перекоса в лёгкость или тяжесть.`
+  },
+  harm:{
+    strong:(o,l)=>`Легко сочетается с ${o} (${l}) — там планета и так звучит уверенно, так что дар получается двойным и особенно незаметным.`,
+    weak:(o,l)=>`Легко сочетается с ${o} (${l}), хотя там планета слабовата — лёгкость реальна, но без особой мощи за ней.`,
+    neutral:(o,l)=>`Легко сочетается с ${o} (${l}) — ровный, поддерживающий поток без напряжения.`
+  },
+  conj:{
+    strong:(o,l)=>`Сливается в одно целое с ${o} (${l}) — там планета сильна, и в сплаве получается мощная, слегка однобокая связка.`,
+    weak:(o,l)=>`Сливается в одно целое с ${o} (${l}), хотя там планета слабовата — сплав есть, но с меньшим запасом прочности.`,
+    neutral:(o,l)=>`Сливается в одно целое с ${o} (${l}) — отделить одно от другого трудно.`
+  }
+};
+function strengthBucket(dig){ return (dig==='ruler'||dig==='exalt')?'strong':(dig==='detriment'||dig==='fall')?'weak':'neutral'; }
+function aspectClause(a,p,ch){
+  const other=a.p1===p?a.p2:a.p1;
+  const os=Math.floor(rev(ch.pos[other].lon)/30), oh=houseOf(ch.pos[other].lon,ch.houses.cusps);
+  const bucket=strengthBucket(dignity(other,os));
+  const frame=ASPECT_PARTNER_FRAME[a.asp.kind]&&ASPECT_PARTNER_FRAME[a.asp.kind][bucket];
+  if(!frame) return '';
+  return frame(PLANET_INSTR[other]||PN(other), `${SIGN_LOC.ru[os]}, ${oh}-й дом`);
+}
+/* Rule-based synthesis, not concatenation: combines dignity strength + the
+   tone of the strongest aspect into ONE verdict sentence. This is the actual
+   "sum" the user asked for - a derived conclusion, not a fourth clause. */
+const SYNTH_TEXT={
+  '-2':'Итог: качеству тут непросто со всех сторон — рост идёт только через явное, осознанное усилие.',
+  '-1':'Итог: есть заметная нагрузка, но не критичная — с ней вполне можно работать.',
+  '0':'Итог: ровное, рабочее состояние без явного перекоса в лёгкость или тяжесть.',
+  '1':'Итог: качеству скорее везёт — получается легче, чем у большинства.',
+  '2':'Итог: сильная, слаженная сторона характера — здесь всё работает заодно, без внутреннего сопротивления.'
+};
+function synthesize(dig,strongestAspectKind){
+  const digScore=(dig==='ruler'||dig==='exalt')?1:(dig==='detriment'||dig==='fall')?-1:0;
+  const aspScore=strongestAspectKind==='hard'?-1:strongestAspectKind==='harm'?1:0;
+  const total=Math.max(-2,Math.min(2,digScore+aspScore));
+  return SYNTH_TEXT[String(total)];
+}
 function composePlacement(ch,p){
   const P=CORPUS&&CORPUS.planets[p]; if(!P) return null;
   const lon=ch.pos[p].lon, s=Math.floor(rev(lon)/30), hs=houseOf(lon,ch.houses.cusps);
@@ -677,17 +735,16 @@ function composePlacement(ch,p){
   const short=Object.entries(score).sort((a,b)=>b[1]-a[1]).slice(0,5).map(e=>e[0]).join(', ');
   /* Reader-facing text uses the plain-language gloss of each atom - the token
      algebra above (weights, dignity, aspect blend) is what stays "under the
-     hood" for precision; only the short 5-word tag is drawn straight from it. */
+     hood" for precision. Aspect clauses fold in the partner's own sign/house/
+     strength, and the paragraph ends with a derived synthesis, not a list. */
   const parts=[P.plain||firstSent(P.detail)];
-  if(S) parts.push(`${SIGN_LOC.ru[s].charAt(0).toUpperCase()+SIGN_LOC.ru[s].slice(1)} это выглядит так: ${(S.plain||firstSent(S.detail)).charAt(0).toLowerCase()+(S.plain||firstSent(S.detail)).slice(1)}`);
+  if(S) parts.push(`${uc(SIGN_LOC.ru[s])} это выглядит так: ${lc(S.plain||firstSent(S.detail))}`);
   if(dig) parts.push(DIG_NOTE[dig]);
-  if(H) parts.push(`Чаще всего это проявляется в сфере ${hs}-го дома: ${(H.plain||H.short).charAt(0).toLowerCase()+(H.plain||H.short).slice(1)}`);
-  if(myAspects.length){
-    const a=myAspects[0], other=a.p1===p?a.p2:a.p1, A=CORPUS.aspects[a.asp.name];
-    if(A) parts.push(`Сильнее всего это перекликается с ${PLANET_INSTR[other]||PN(other)} (${ASPECT_NAME.ru[a.asp.name]}): ${(A.plain||A.short).charAt(0).toLowerCase()+(A.plain||A.short).slice(1)}`);
-  }
+  if(H) parts.push(`Чаще всего это проявляется в сфере ${hs}-го дома: ${lc(H.plain||H.short)}`);
+  myAspects.slice(0,2).forEach(a=>{ const c=aspectClause(a,p,ch); if(c) parts.push(c); });
+  parts.push(synthesize(dig, myAspects[0]&&myAspects[0].asp.kind));
   const label=`${PN(p)} ${SIGN_LOC.ru[s]}, ${hs}-й дом`;
-  return {label,short,detail:parts.join(' ')};
+  return {label,short,detail:parts.join(' '),score};
 }
 function composeAsc(ch){
   if(!CORPUS) return null;
@@ -699,11 +756,33 @@ function composeAsc(ch){
   (H1&&H1.tokens||[]).forEach(([w,x])=>{score[w]=(score[w]||0)+x*0.4;});
   const short=Object.entries(score).sort((a,b)=>b[1]-a[1]).slice(0,5).map(e=>e[0]).join(', ');
   const detail=`${S.plain||firstSent(S.detail)} Это первое, что видят в вас люди при знакомстве — ваш облик и манера держаться.`;
-  return {label:`Асцендент ${SIGN_LOC.ru[s]}`,short,detail};
+  return {label:`Асцендент ${SIGN_LOC.ru[s]}`,short,detail,score};
+}
+/* Whole-chart synthesis: merges Sun+Moon+Ascendant into one portrait, plus
+   the single tightest aspect in the whole chart (the one thing most likely
+   to define the person, regardless of which planets it involves). */
+function composePortrait(ch){
+  if(!CORPUS) return null;
+  const sun=composePlacement(ch,'Sun'), moon=composePlacement(ch,'Moon'), asc=composeAsc(ch);
+  if(!sun||!moon||!asc) return null;
+  const score={};
+  const addSc=(sc,mult)=>{ if(!sc) return; Object.entries(sc).forEach(([w,x])=>{score[w]=(score[w]||0)+x*mult;}); };
+  addSc(sun.score,1.1); addSc(moon.score,1.1); addSc(asc.score,0.9);
+  const short=Object.entries(score).sort((a,b)=>b[1]-a[1]).slice(0,6).map(e=>e[0]).join(', ');
+  const ascSignIdx=Math.floor(rev(ch.asc)/30);
+  const ascPlain=CORPUS.signs[SIGN_KEYS[ascSignIdx]].plain;
+  const parts=[ascPlain, `В основе характера — ${lc(CORPUS.planets.Sun.plain)}`, `А эмоционально сильнее всего работает вот что: ${lc(CORPUS.planets.Moon.plain)}`];
+  const all=findAspects(ch.pos).sort((a,b)=>a.orb-b.orb);
+  if(all.length){
+    const a=all[0], A=CORPUS.aspects[a.asp.name];
+    if(A) parts.push(`Самая заметная связка в характере — ${PN(a.p1)} и ${PN(a.p2)} (${ASPECT_NAME.ru[a.asp.name]}): ${lc(A.plain||A.short)}`);
+  }
+  return {label:'Портрет',short,detail:parts.join(' ')};
 }
 function natalReading(ch){
   if(CORPUS&&LANG==='ru'){
     const u=[];
+    const portrait=composePortrait(ch); if(portrait) u.push(unitHTML(portrait.label,portrait.short,portrait.detail));
     const asc=composeAsc(ch); if(asc) u.push(unitHTML(asc.label,asc.short,asc.detail));
     const order=['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','NNode','SNode','Lilith','Selena'];
     order.forEach(p=>{
@@ -845,9 +924,11 @@ function learn(){const o=loadLearn();o.obs=o.obs||[];o.feat=o.feat||{};return o;
 function featStat(o,k){return o.feat[k]||{rSum:0,rN:0,vSum:0,vN:0};}
 function learnedRes(o,k){const f=featStat(o,k);return (2+f.rSum)/(2+f.rN);}
 function learnedVal(o,k){const f=featStat(o,k);return (0+f.vSum)/(2+f.vN);}
-function currentTransits(ch){
-  const now=new Date(),utH=now.getUTCHours()+now.getUTCMinutes()/60;
-  const tp=computeChart(now.getUTCFullYear(),now.getUTCMonth()+1,now.getUTCDate(),utH,0,0,0).pos;
+function currentTransits(ch,y,mo,da){
+  let utH;
+  if(y==null){ const now=new Date(); y=now.getUTCFullYear(); mo=now.getUTCMonth()+1; da=now.getUTCDate(); utH=now.getUTCHours()+now.getUTCMinutes()/60; }
+  else utH=12; // a picked calendar date is evaluated at local noon - day-level granularity
+  const tp=computeChart(y,mo,da,utH,0,0,0).pos;
   const hits=[];
   const receivers=BODIES.concat(['ASC','MC','NNode','Lilith']);
   ['Jupiter','Saturn','Uranus','Neptune','Pluto','Mars','Sun','Venus','Mercury'].forEach(T=>{
@@ -886,12 +967,35 @@ function recall(o,s){
   const dt=new Date(past.t).toLocaleDateString(LANG==='ru'?'ru-RU':'en-US');
   return `<div class="tiny" style="margin-top:6px">↺ ${t('lasttime')} (${dt}): ${past.r||'?'}/3</div>`;
 }
+/* Synthesized read of the whole day: merges the top hits' planet+aspect
+   tokens (weighted by personal weight) into one tagline, then leads with the
+   single strongest transit's own sentence - a real summary, not a list header. */
+function daySynthesis(o,hits){
+  if(!hits.length||!CORPUS) return '';
+  const score={};
+  const add=(toks,mult)=>{(toks||[]).forEach(([w,x])=>{score[w]=(score[w]||0)+x*mult;});};
+  hits.slice(0,4).forEach(({h,w})=>{
+    add(CORPUS.planets[h.tp]&&CORPUS.planets[h.tp].tokens, w*0.8);
+    add(CORPUS.planets[h.np]&&CORPUS.planets[h.np].tokens, w*0.5);
+    add(CORPUS.aspects[h.asp.name]&&CORPUS.aspects[h.asp.name].tokens, w*0.6);
+  });
+  const words=Object.entries(score).sort((a,b)=>b[1]-a[1]).slice(0,5).map(e=>e[0]).join(', ');
+  const lead=transitText(o,hits[0].h);
+  return words?`Главное в этот день: ${words}. ${lead}`:lead;
+}
+function selectedTransitDate(){
+  const v=document.getElementById('transitDate').value;
+  if(!v) return [null,null,null];
+  return v.split('-').map(Number);
+}
 function renderTransits(ch){
   const o=learn();
-  const hits=currentTransits(ch)
+  const [y,mo,da]=selectedTransitDate();
+  const hits=currentTransits(ch,y,mo,da)
     .filter(h=>!(['Uranus','Neptune','Pluto'].includes(h.tp)&&['Uranus','Neptune','Pluto'].includes(h.np)))
     .map(h=>({h,w:personalWeight(o,h)})).sort((a,b)=>b.w-a.w).slice(0,4);
   const box=document.getElementById('transitlist');
+  document.getElementById('daysyn').textContent=daySynthesis(o,hits);
   if(!hits.length){box.innerHTML=`<p class="tiny">${t('notransits')}</p>`;renderLearned();return;}
   box.innerHTML=hits.map(({h,w})=>{
     const s=sig(h), intensity=Math.cos((h.orb/h.maxo)*Math.PI/2)**2;
@@ -1003,6 +1107,10 @@ function applyStatic(){
   if(SELECTED_CITY) document.getElementById('city').value=LANG==='ru'?SELECTED_CITY.r:SELECTED_CITY.e;
   document.title='Astrarium';
 }
+function todayStr(){
+  const n=new Date(), p=x=>String(x).padStart(2,'0');
+  return `${n.getFullYear()}-${p(n.getMonth()+1)}-${p(n.getDate())}`;
+}
 function run(){
   const dv=document.getElementById('date').value, tv=document.getElementById('time').value;
   const lat=parseFloat(document.getElementById('lat').value), lng=parseFloat(document.getElementById('lng').value);
@@ -1016,12 +1124,15 @@ function run(){
   document.getElementById('charttitle').textContent=`${t('natal')} · ${CURRENT.houses.system==='placidus'?t('housesys'):t('housesyseq')}`;
   drawWheel(CURRENT); renderPositions(CURRENT);
   document.getElementById('reading').innerHTML=natalReading(CURRENT);
+  if(!document.getElementById('transitDate').value) document.getElementById('transitDate').value=todayStr();
   renderTransits(CURRENT);
   document.getElementById('detail').className='detail empty';
   document.getElementById('detail').textContent=t('tapdetail');
 }
 document.getElementById('calc').addEventListener('click',run);
 document.getElementById('reset').addEventListener('click',()=>{localStorage.removeItem(LKEY);if(CURRENT)renderTransits(CURRENT);});
+document.getElementById('transitDate').addEventListener('change',()=>{if(CURRENT)renderTransits(CURRENT);});
+document.getElementById('transitToday').addEventListener('click',()=>{document.getElementById('transitDate').value=todayStr();if(CURRENT)renderTransits(CURRENT);});
 document.querySelectorAll('.lang button').forEach(b=>b.addEventListener('click',()=>{
   LANG=b.dataset.lang; localStorage.setItem('astrarium_lang',LANG); applyStatic(); if(CURRENT)run();
 }));
