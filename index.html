@@ -574,6 +574,24 @@ function findAspects(pos){
   }
   return out;
 }
+/* Aspects to/from ANY point (planet, node, Lilith, Selena) against the 10
+   classical planets plus the other present points - findAspects() above only
+   pairs the 10 classical BODIES with each other, so it silently never finds
+   aspects to the karmic points. This is what the node/Lilith/Selena readings
+   (and their aspect-configuration checks) need instead. */
+function aspectsInvolving(ch,key){
+  const lon=ch.pos[key].lon;
+  // the nodes are always exactly opposite each other by definition - not a
+  // meaningful, informative aspect, so that pairing is never reported
+  const skip=(key==='NNode'&&'SNode')||(key==='SNode'&&'NNode');
+  const others=BODIES.concat(POINTS.filter(k=>ch.pos[k])).filter(k=>k!==key&&k!==skip);
+  const out=[];
+  others.forEach(o=>{
+    let diff=Math.abs(rev(ch.pos[o].lon-lon)); if(diff>180)diff=360-diff;
+    for(const asp of ASPECTS){const orb=Math.abs(diff-asp.angle);if(orb<=asp.orb){out.push({p1:key,p2:o,asp,orb});break;}}
+  });
+  return out.sort((a,b)=>a.orb-b.orb);
+}
 
 /* ---------- interpretation: structural stub (short + expandable detail) ----------
    Placeholder until the real knowledge base is plugged in. Structure per unit:
@@ -725,7 +743,7 @@ function composePlacement(ch,p){
   const score={};
   const add=(tokens,mult)=>{(tokens||[]).forEach(([w,x])=>{score[w]=(score[w]||0)+x*mult;});};
   add(P.tokens,1.0); add(S&&S.tokens,wSign); add(H&&H.tokens,0.55);
-  const myAspects=findAspects(ch.pos).filter(a=>a.p1===p||a.p2===p).sort((a,b)=>a.orb-b.orb).slice(0,3);
+  const myAspects=aspectsInvolving(ch,p).slice(0,3);
   myAspects.forEach(a=>{
     const A=CORPUS.aspects[a.asp.name], other=a.p1===p?a.p2:a.p1, O=CORPUS.planets[other];
     const k=(1-a.orb/a.asp.orb)*0.45;
@@ -758,16 +776,50 @@ function composeAsc(ch){
   const detail=`${S.plain||firstSent(S.detail)} Это первое, что видят в вас люди при знакомстве — ваш облик и манера держаться.`;
   return {label:`Асцендент ${SIGN_LOC.ru[s]}`,short,detail,score};
 }
-/* Whole-chart synthesis: merges Sun+Moon+Ascendant into one portrait, plus
-   the single tightest aspect in the whole chart (the one thing most likely
-   to define the person, regardless of which planets it involves). */
+/* Karmic axis: sign + house for both nodes, every aspect to the North Node
+   (with the aspecting planet's own sign/house/strength via aspectClause, same
+   as any other placement) plus anything reaching the South Node that isn't
+   already covered. Configuration check: if two planets that both aspect the
+   node axis ALSO aspect each other, the axis sits inside a closed figure
+   (mini T-square/yod-like lock), not just touched by isolated single lines -
+   that changes how load-bearing the karmic theme is, so it's called out. */
+const ASPECT_INLOC_RU={conjunction:'в соединении',sextile:'в секстиле',square:'в квадрате',trine:'в трине',opposition:'в оппозиции'};
+function composeNodeAxis(ch){
+  if(!CORPUS||!ch.pos.NNode) return '';
+  const ns=Math.floor(rev(ch.pos.NNode.lon)/30), nh=houseOf(ch.pos.NNode.lon,ch.houses.cusps);
+  const ss=Math.floor(rev(ch.pos.SNode.lon)/30), sh=houseOf(ch.pos.SNode.lon,ch.houses.cusps);
+  const N=CORPUS.planets.NNode, S=CORPUS.planets.SNode;
+  const parts=[`Кармическая ось начинается в прошлом, ${SIGN_LOC.ru[ss]} (${sh}-й дом): ${lc(S.plain)} А ведёт туда, где рост, ${SIGN_LOC.ru[ns]} (${nh}-й дом): ${lc(N.plain)}`];
+  // the nodes are always exactly opposite each other by definition - not a
+  // meaningful aspect, so it's excluded from both lists below
+  const asN=aspectsInvolving(ch,'NNode').filter(a=>a.p2!=='SNode').slice(0,3);
+  if(asN.length){
+    asN.forEach(a=>{ const c=aspectClause(a,'NNode',ch); if(c) parts.push(c); });
+    for(let i=0;i<asN.length;i++)for(let j=i+1;j<asN.length;j++){
+      const p1=asN[i].p2, p2=asN[j].p2;
+      let diff=Math.abs(rev(ch.pos[p1].lon-ch.pos[p2].lon)); if(diff>180)diff=360-diff;
+      const hit=ASPECTS.find(asp=>Math.abs(diff-asp.angle)<=asp.orb);
+      if(hit) parts.push(`Это не разрозненные нити: ${PN(p1)} и ${PN(p2)} сами ${ASPECT_INLOC_RU[hit.name]} друг с другом — узел встроен в замкнутую конфигурацию, а это утяжеляет и закрепляет тему, а не просто задевает её по касательной.`);
+    }
+  } else {
+    parts.push('Крупных аспектов к узлам нет: кармическая тема работает сама по себе, без давления или поддержки со стороны других планет.');
+  }
+  const asS=aspectsInvolving(ch,'SNode').filter(a=>a.p2!=='NNode'&&!asN.some(b=>b.p2===a.p2)).slice(0,2);
+  if(asS.length) parts.push(`К Южному узлу отдельно обращены: ${asS.map(a=>`${PN(a.p2)} (${ASPECT_NAME.ru[a.asp.name]})`).join(', ')}.`);
+  return parts.join(' ');
+}
+/* Whole-chart synthesis: merges Sun+Moon+Ascendant+node axis into one
+   portrait, plus the single tightest aspect in the whole chart (the one
+   thing most likely to define the person, regardless of which planets it
+   involves). */
 function composePortrait(ch){
   if(!CORPUS) return null;
   const sun=composePlacement(ch,'Sun'), moon=composePlacement(ch,'Moon'), asc=composeAsc(ch);
   if(!sun||!moon||!asc) return null;
+  const nodeRead=ch.pos.NNode?composePlacement(ch,'NNode'):null;
   const score={};
   const addSc=(sc,mult)=>{ if(!sc) return; Object.entries(sc).forEach(([w,x])=>{score[w]=(score[w]||0)+x*mult;}); };
-  addSc(sun.score,1.1); addSc(moon.score,1.1); addSc(asc.score,0.9);
+  addSc(sun.score,1.1); addSc(moon.score,1.1); addSc(asc.score,0.9); addSc(nodeRead&&nodeRead.score,0.8);
   const short=Object.entries(score).sort((a,b)=>b[1]-a[1]).slice(0,6).map(e=>e[0]).join(', ');
   const ascSignIdx=Math.floor(rev(ch.asc)/30);
   const ascPlain=CORPUS.signs[SIGN_KEYS[ascSignIdx]].plain;
@@ -777,6 +829,8 @@ function composePortrait(ch){
     const a=all[0], A=CORPUS.aspects[a.asp.name];
     if(A) parts.push(`Самая заметная связка в характере — ${PN(a.p1)} и ${PN(a.p2)} (${ASPECT_NAME.ru[a.asp.name]}): ${lc(A.plain||A.short)}`);
   }
+  const nodeText=composeNodeAxis(ch);
+  if(nodeText) parts.push(nodeText);
   return {label:'Портрет',short,detail:parts.join(' ')};
 }
 function natalReading(ch){
