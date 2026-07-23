@@ -941,15 +941,16 @@ const ASPECT_PARTNER_FRAME={
 function strengthBucket(dig){ return (dig==='ruler'||dig==='exalt')?'strong':(dig==='detriment'||dig==='fall')?'weak':'neutral'; }
 /* Plain-language lead: says in human words HOW the other placement is tied in
    (fused with / rubs against / pulls the other way / quietly helps / offers a
-   hand), naming the other side by what it does for the person. The astro term
-   stays inside the parenthesis as the technical anchor. Two variants per
-   aspect kill word-for-word repeats when a chart has, say, two oppositions. */
+   hand), naming the other side purely by what it does for the person. No astro
+   term anywhere in the body - the card title already carries the technical
+   name. Two variants per aspect kill word-for-word repeats when a chart has,
+   say, two oppositions. */
 const ASPECT_LINK={
-  conjunction:[(f,ref)=>`К этому намертво припаяно то, как вы ${f} (соединение с ${ref}).`,(f,ref)=>`С этим неразделимо сплавлено то, как вы ${f} (соединение с ${ref}).`],
-  square:[(f,ref)=>`С этим то и дело сталкивается то, как вы ${f} (квадрат с ${ref}).`,(f,ref)=>`Этому нередко перечит то, как вы ${f} (квадрат с ${ref}).`],
-  opposition:[(f,ref)=>`А в противовес этому тянет то, как вы ${f} (оппозиция с ${ref}).`,(f,ref)=>`На другой чаше весов то, как вы ${f} (оппозиция с ${ref}).`],
-  trine:[(f,ref)=>`Само собой этому помогает то, как вы ${f} (трин с ${ref}).`,(f,ref)=>`Без всяких усилий сюда подыгрывает то, как вы ${f} (трин с ${ref}).`],
-  sextile:[(f,ref)=>`Есть и подмога: то, как вы ${f} (секстиль с ${ref}).`,(f,ref)=>`Может выручить и то, как вы ${f} (секстиль с ${ref}).`]
+  conjunction:[f=>`К этому намертво припаяно то, как вы ${f}.`,f=>`С этим неразделимо сплавлено то, как вы ${f}.`],
+  square:[f=>`С этим то и дело сталкивается то, как вы ${f}.`,f=>`Этому нередко перечит то, как вы ${f}.`],
+  opposition:[f=>`А в противовес этому тянет то, как вы ${f}.`,f=>`На другой чаше весов то, как вы ${f}.`],
+  trine:[f=>`Само собой этому помогает то, как вы ${f}.`,f=>`Без всяких усилий сюда подыгрывает то, как вы ${f}.`],
+  sextile:[f=>`Есть и подмога: то, как вы ${f}.`,f=>`Может выручить и то, как вы ${f}.`]
 };
 function aspectClause(a,p,ch,vi){
   /* vi = position of this clause in its paragraph; folding it into the
@@ -959,7 +960,6 @@ function aspectClause(a,p,ch,vi){
   const other=a.p1===p?a.p2:a.p1;
   const os=Math.floor(rev(ch.pos[other].lon)/30), oh=houseOf(ch.pos[other].lon,ch.houses.cusps);
   const bucket=strengthBucket(dignity(other,os));
-  const ref=`${PLANET_INSTR[other]||PN(other)} ${SIGN_LOC.ru[os]}, ${oh}-й дом`;
   const specific=ASPECT_PLANET_FRAME[a.asp.name]&&ASPECT_PLANET_FRAME[a.asp.name][other];
   if(specific){
     /* Variant base keyed on the CARD's own planet (constant across its clauses)
@@ -969,7 +969,7 @@ function aspectClause(a,p,ch,vi){
        No generic "this side is strong/weak" tail - the user flagged such
        filler as noise, and the concrete .d/.c already carry the substance. */
     const L=ASPECT_LINK[a.asp.name], lead=L[(hashIdx(p+a.asp.name,L.length)+vi)%L.length];
-    return `${lead(PLANET_FUNC[other]||lc(PN(other)), ref)} ${specific.d} ${specific.c}`;
+    return `${lead(PLANET_FUNC[other]||lc(PN(other)))} ${specific.d} ${specific.c}`;
   }
   const frame=ASPECT_PARTNER_FRAME[a.asp.kind]&&ASPECT_PARTNER_FRAME[a.asp.kind][bucket];
   if(!frame) return '';
